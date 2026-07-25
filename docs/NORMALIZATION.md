@@ -29,6 +29,21 @@ A fase produz somente sugestões. Ela:
 
 O formato dos relatórios de inventário pode variar. O leitor reconhece chaves usuais e preserva o objeto original no modelo interno. Formatos novos devem ganhar fixture e regra explícita.
 
+### Formato real do inventário Flipper-IRDB
+
+A calibração com os relatórios reais confirmou:
+
+- `inventory.json.files[].relative_path` identifica o arquivo;
+- `command_names` contém a lista resumida;
+- `signals[].name_original` é o nome individual;
+- `signals[].protocol` e `address_original` fornecem diversidade técnica;
+- `inference.brand/category/model` contém `value`, `confidence` e `basis`;
+- `commands.json` é uma lista agregada com `name_original`, `count`, `examples`,
+  `categories` e `normalized_suggestion`.
+
+O leitor anterior não reconhecia `relative_path` nem `command_names` no CSV/JSON real.
+Isso produzia caminhos artificiais, zero comandos e zero diversidade técnica.
+
 ## Saídas
 
 JSON:
@@ -112,6 +127,10 @@ Ordem de evidência:
 4. comentários.
 
 Um candidato extraído precisa conter letras e números. Termos genéricos são excluídos. Mais de um candidato gera alternativas e revisão. Sem candidato claro, `candidate` é `null`.
+
+Campos de modelo inferidos pelo inventário não são tratados como explícitos: sua confiança
+original é preservada e limitada. Valores numéricos de conversão, como `32_159`, combinações
+de `Unknown` com a marca e nomes `remote1`/`device1` são rejeitados.
 
 ## Comandos
 

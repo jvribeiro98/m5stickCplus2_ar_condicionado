@@ -1,94 +1,166 @@
 """Extração conservadora de candidatos de modelo."""
 
 import re
+import unicodedata
 from pathlib import PurePosixPath
 
 from .models import InventoryRecord
 
-GENERIC = {
+STOPWORDS = {
+    "unknown",
     "remote",
+    "remote control",
     "control",
     "controller",
     "universal",
-    "codes",
-    "code",
-    "brute",
-    "bruteforce",
-    "sample",
+    "device",
     "test",
+    "sample",
+    "example",
+    "demo",
+    "generic",
     "misc",
-    "unknown",
+    "miscellaneous",
+    "tv",
+    "television",
+    "ac",
+    "air conditioner",
+    "fan",
+    "projector",
+    "receiver",
+    "soundbar",
+    "dvd",
+    "blu ray",
+    "codes",
+    "codeset",
+    "database",
+    "converted",
 }
-MODEL_TOKEN = re.compile(r"(?i)^(?=.{3,40}$)(?=.*[a-z])(?=.*\d)[a-z0-9][a-z0-9._-]*$")
+GENERIC_NUMBERED = re.compile(r"(?i)^(?:remote|device|test|sample|example|code|codeset)[ _-]*\d+$")
+COMMERCIAL_TOKEN = re.compile(r"(?i)^(?=.{3,48}$)(?=.*[a-z])(?=.*\d)[a-z0-9][a-z0-9._+,-]*$")
 
 
-def _tokens(text: str) -> list[str]:
-    return [token for token in re.split(r"[\s/\\]+", text) if token]
+def _normalized(value: str | None) -> str:
+    if not value:
+        return ""
+    value = unicodedata.normalize("NFKC", value).casefold()
+    return re.sub(r"[^a-z0-9]+", " ", value).strip()
+
+
+def _is_brand_or_category(value: str, record: InventoryRecord) -> bool:
+    candidate = _normalized(value)
+    brand = _normalized(record.original_brand)
+    category = _normalized(record.original_category)
+    return candidate in {brand, category} or candidate in STOPWORDS
+
+
+def _commercial_candidate(value: str, record: InventoryRecord) -> str | None:
+    clean = value.strip().removesuffix(".ir").strip("()[]{}., ")
+    if not clean or _is_brand_or_category(clean, record):
+        return None
+    normalized_parts = set(_normalized(clean).split())
+    brand_parts = set(_normalized(record.original_brand).split())
+    if normalized_parts and normalized_parts <= STOPWORDS | brand_parts:
+        return None
+    if GENERIC_NUMBERED.fullmatch(clean):
+        return None
+    if clean.replace("_", "").replace("-", "").isdigit():
+        return None
+
+    brand = _normalized(record.original_brand)
+    parts = [part for part in re.split(r"[\s/]+", clean) if part]
+    filtered = [part for part in parts if _normalized(part) != brand]
+    for part in filtered:
+        token = part.strip("()[]{}., ")
+        if COMMERCIAL_TOKEN.fullmatch(token) and not GENERIC_NUMBERED.fullmatch(token):
+            return token
+    joined = "_".join(filtered)
+    if COMMERCIAL_TOKEN.fullmatch(joined) and not GENERIC_NUMBERED.fullmatch(joined):
+        return joined
+    return None
 
 
 def extract_model(record: InventoryRecord) -> dict:
-    if record.original_model and record.original_model.strip():
-        value = record.original_model.strip()
-        return {
-            "record_id": record.record_id,
-            "source_path": record.source_path,
-            "original_text": record.original_model,
-            "candidate": value,
-            "confidence": 0.98,
-            "extraction_source": "inventory.model",
-            "ambiguity": False,
-            "alternatives": [],
-            "reasons": ["campo de modelo explícito no inventário"],
-            "requires_review": False,
-        }
-
     path = PurePosixPath(record.source_path.replace("\\", "/"))
-    sources = [
-        ("file_name", path.stem),
-        ("parent_directory", path.parent.name),
-        *[("comment", comment) for comment in record.comments],
-    ]
-    candidates: list[tuple[str, str]] = []
-    for source, text in sources:
-        for token in _tokens(text):
-            clean = token.strip("()[]{}.,")
-            if clean.casefold() not in GENERIC and MODEL_TOKEN.fullmatch(clean):
-                candidates.append((source, clean))
+    evidence: list[tuple[str, str, float]] = []
 
-    unique = []
-    for item in candidates:
-        if item[1].casefold() not in {candidate.casefold() for _, candidate in unique}:
+    if record.original_model:
+        candidate = _commercial_candidate(record.original_model, record)
+        if candidate:
+            confidence = record.model_confidence
+            if confidence <= 0:
+                confidence = 0.62
+            evidence.append(("inventory.model", candidate, min(confidence, 0.78)))
+
+    filename_candidate = _commercial_candidate(path.stem, record)
+    if filename_candidate:
+        evidence.append(("file_name", filename_candidate, 0.72))
+
+    parent_candidate = _commercial_candidate(path.parent.name, record)
+    if parent_candidate:
+        evidence.append(("parent_directory", parent_candidate, 0.68))
+
+    for comment in record.comments:
+        comment_candidate = _commercial_candidate(comment, record)
+        if comment_candidate:
+            evidence.append(("comment", comment_candidate, 0.6))
+
+    unique: list[tuple[str, str, float]] = []
+    seen = set()
+    for item in evidence:
+        key = _normalized(item[1])
+        if key and key not in seen:
+            seen.add(key)
             unique.append(item)
 
     if not unique:
         return {
             "record_id": record.record_id,
             "source_path": record.source_path,
-            "original_text": None,
+            "original_text": record.original_model,
+            "candidate": None,
+            "confidence": 0.0,
+            "extraction_source": None,
+            "ambiguity": False,
+            "alternatives": [],
+            "reasons": [
+                "nenhum modelo comercial forte; marcas, categorias, genéricos e números foram excluídos"
+            ],
+            "requires_review": True,
+        }
+
+    source, candidate, confidence = unique[0]
+    alternatives = [
+        value for _, value, _ in unique[1:] if _normalized(value) != _normalized(candidate)
+    ]
+    if alternatives:
+        confidence = min(confidence, 0.55)
+    reasons = [
+        f"padrão alfanumérico comercial encontrado em {source}",
+        f"confiança da fonte limitada a {confidence:.2f}",
+    ]
+    if record.original_brand and _normalized(candidate) == _normalized(record.original_brand):
+        return {
+            "record_id": record.record_id,
+            "source_path": record.source_path,
+            "original_text": record.original_model,
             "candidate": None,
             "confidence": 0.0,
             "extraction_source": None,
             "ambiguity": True,
             "alternatives": [],
-            "reasons": ["nenhum padrão alfanumérico claro foi encontrado"],
+            "reasons": ["marca e modelo são iguais; candidato descartado"],
             "requires_review": True,
         }
-
-    source, candidate = unique[0]
-    alternatives = [value for _, value in unique[1:]]
-    confidence = 0.84 if source == "file_name" and not alternatives else 0.62
     return {
         "record_id": record.record_id,
         "source_path": record.source_path,
-        "original_text": path.stem if source == "file_name" else path.parent.name,
+        "original_text": record.original_model,
         "candidate": candidate,
-        "confidence": confidence,
+        "confidence": round(confidence, 4),
         "extraction_source": source,
         "ambiguity": bool(alternatives),
-        "alternatives": alternatives,
-        "reasons": [
-            f"token alfanumérico com letras e números encontrado em {source}",
-            *([f"alternativas encontradas: {', '.join(alternatives)}"] if alternatives else []),
-        ],
-        "requires_review": bool(alternatives) or confidence < 0.8,
+        "alternatives": sorted(set(alternatives)),
+        "reasons": reasons,
+        "requires_review": confidence < 0.8 or bool(alternatives),
     }

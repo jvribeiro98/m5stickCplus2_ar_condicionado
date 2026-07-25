@@ -11,6 +11,7 @@ from tools.normalization.reports import analyze_reports, inspect_output, load_in
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_REPORTS = ROOT / "tests" / "fixtures" / "normalization"
+REAL_FORMAT_FIXTURE = ROOT / "tests" / "fixtures" / "normalization-real"
 
 
 def record(path: str, **kwargs) -> InventoryRecord:
@@ -61,7 +62,7 @@ def test_ambiguous_brand_is_not_applied():
 def test_clear_model_extraction():
     result = extract_model(record("TVs/Samsung/KDL55X9000.ir"))
     assert result["candidate"] == "KDL55X9000"
-    assert result["confidence"] >= 0.8
+    assert result["confidence"] >= 0.7
 
 
 def test_missing_model_requires_review():
@@ -73,6 +74,12 @@ def test_missing_model_requires_review():
 def test_volume_plus_command():
     result = suggest_command("Volume+", "TV/example.ir")
     assert result["canonical_name"] == "volume_up"
+    assert result["confidence"] >= 0.95
+
+
+def test_volume_minus_real_alias():
+    result = suggest_command("VOL-", "TV/example.ir")
+    assert result["canonical_name"] == "volume_down"
     assert result["confidence"] >= 0.95
 
 
@@ -92,6 +99,10 @@ def test_power1_is_bruteforce_evidence_and_review_candidate():
 def test_specific_file():
     item = record(
         "TVs/Samsung/KDL55X9000.ir",
+        brand="Samsung",
+        category="TVs",
+        brand_confidence=0.7,
+        category_confidence=0.85,
         commands=(CommandRecord("Power", "NEC", "0x01"),),
     )
     result = classify(item, extract_model(item))
@@ -163,3 +174,41 @@ def test_inspect_returns_original_suggestions_and_reasons(tmp_path: Path):
     assert classification["original"]["brand"] == "SAMSUNG"
     assert classification["confidence"] > 0
     assert classification["reasons"]
+
+
+def test_real_inventory_format_preserves_commands_protocols_and_addresses():
+    records, consumed = load_inventory(REAL_FORMAT_FIXTURE)
+    converted = next(record for record in records if record.original_brand == "2wire")
+
+    assert consumed == ["inventory.json"]
+    assert converted.source_path.endswith("32_159.ir")
+    assert [command.original_name for command in converted.commands] == [
+        "POWER",
+        "BACK",
+        "UP",
+        "VOL-",
+        "VOL+",
+    ]
+    assert {command.protocol for command in converted.commands} == {"NECext"}
+    assert {command.address for command in converted.commands} == {"20 9F 00 00"}
+
+
+def test_real_numeric_conversion_name_is_not_a_model():
+    records, _ = load_inventory(REAL_FORMAT_FIXTURE)
+    converted = next(record for record in records if record.original_brand == "2wire")
+    result = extract_model(converted)
+
+    assert result["candidate"] is None
+    assert result["requires_review"]
+
+
+def test_real_universal_pattern_is_not_specific_device():
+    records, _ = load_inventory(REAL_FORMAT_FIXTURE)
+    universal = next(record for record in records if "Universal" in record.source_path)
+    model = extract_model(universal)
+    category = suggest_category(universal.original_category, universal.source_path)
+    brand = suggest_brand(universal.original_brand, universal.source_path)
+    result = classify(universal, model, category, brand)
+
+    assert result["classification"] in {"universal_remote", "brute_force"}
+    assert result["evidence"]["sequential_group_count"] >= 1

@@ -18,6 +18,10 @@ class InventoryRecord:
     original_category: str | None
     original_brand: str | None
     original_model: str | None
+    category_confidence: float = 0.0
+    brand_confidence: float = 0.0
+    model_confidence: float = 0.0
+    model_basis: str | None = None
     comments: tuple[str, ...] = ()
     commands: tuple[CommandRecord, ...] = ()
     signal_count: int = 0

@@ -54,31 +54,53 @@ def _as_list(value: Any) -> list:
 
 
 def _commands(data: dict[str, Any]) -> tuple[CommandRecord, ...]:
-    values = _first(data, ("commands", "signals", "buttons", "entries"), [])
+    values = _first(
+        data,
+        ("commands", "signals", "command_names", "buttons", "entries"),
+        [],
+    )
     result = []
     for value in _as_list(values):
         if isinstance(value, str):
             result.append(CommandRecord(value))
         elif isinstance(value, dict):
-            name = _first(value, ("original_name", "name", "command", "button"))
+            name = _first(
+                value,
+                ("original_name", "name_original", "name", "command", "button"),
+            )
             if name is not None:
                 result.append(
                     CommandRecord(
                         str(name),
                         str(_first(value, ("protocol", "type"), "")) or None,
-                        str(_first(value, ("address", "addr"), "")) or None,
+                        str(
+                            _first(
+                                value,
+                                ("address_original", "address", "addr"),
+                                "",
+                            )
+                        )
+                        or None,
                     )
                 )
     return tuple(result)
 
 
 def _looks_like_file_record(data: dict[str, Any]) -> bool:
-    return any(key in data for key in ("path", "file", "file_path", "source_path"))
+    return any(key in data for key in ("relative_path", "path", "file", "file_path", "source_path"))
 
 
 def _record(data: dict[str, Any], source_report: str, index: int) -> InventoryRecord:
+    inference = data.get("inference", {})
+    category_inference = inference.get("category", {})
+    brand_inference = inference.get("brand", {})
+    model_inference = inference.get("model", {})
     path = str(
-        _first(data, ("source_path", "file_path", "path", "file"), f"{source_report}#{index}")
+        _first(
+            data,
+            ("relative_path", "source_path", "file_path", "path", "file"),
+            f"{source_report}#{index}",
+        )
     )
     record_id = str(
         _first(
@@ -94,9 +116,25 @@ def _record(data: dict[str, Any], source_report: str, index: int) -> InventoryRe
     return InventoryRecord(
         record_id=record_id,
         source_path=path,
-        original_category=_first(data, ("category", "device_category", "type")),
-        original_brand=_first(data, ("brand", "manufacturer_brand")),
-        original_model=_first(data, ("model", "device_model")),
+        original_category=_first(
+            data,
+            ("category", "device_category", "type"),
+            category_inference.get("value"),
+        ),
+        original_brand=_first(
+            data,
+            ("brand", "manufacturer_brand"),
+            brand_inference.get("value"),
+        ),
+        original_model=_first(
+            data,
+            ("model", "device_model"),
+            model_inference.get("value"),
+        ),
+        category_confidence=float(category_inference.get("confidence", 0.0) or 0.0),
+        brand_confidence=float(brand_inference.get("confidence", 0.0) or 0.0),
+        model_confidence=float(model_inference.get("confidence", 0.0) or 0.0),
+        model_basis=model_inference.get("basis"),
         comments=tuple(str(item) for item in _as_list(_first(data, ("comments", "notes")))),
         commands=commands,
         signal_count=signal_count,
@@ -104,7 +142,7 @@ def _record(data: dict[str, Any], source_report: str, index: int) -> InventoryRe
             _first(data, ("duplicate_count", "duplicates_count", "identical_signals"), 0) or 0
         ),
         parse_errors=tuple(
-            str(item) for item in _as_list(_first(data, ("parse_errors", "errors")))
+            str(item) for item in _as_list(_first(data, ("parse_errors", "errors", "issues")))
         ),
         source_report=source_report,
         original_data=data,
@@ -191,13 +229,152 @@ def _unique_proposals(rows: list[dict], key_fields: tuple[str, ...]) -> list[dic
     )
 
 
-def analyze_reports(report_dir: Path, output_dir: Path) -> dict[str, Any]:
+def _previous_classifications(previous_output: Path | None, report_dir: Path) -> dict[str, str]:
+    if previous_output is None:
+        return {}
+    classification_path = previous_output / "file-classification.json"
+    inventory_path = report_dir / "inventory.json"
+    if not classification_path.exists() or not inventory_path.exists():
+        return {}
+    previous = json.loads(classification_path.read_text(encoding="utf-8"))
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8")).get("files", [])
+    result = {}
+    for row in previous:
+        source_path = row["source_path"]
+        if source_path.startswith("inventory.csv#"):
+            index = int(source_path.removeprefix("inventory.csv#"))
+            if index < len(inventory):
+                source_path = inventory[index]["relative_path"]
+        result[source_path] = row["classification"]
+    return result
+
+
+def _write_frequency_analysis(records: list[InventoryRecord], analysis_output: Path) -> int:
+    frequencies: dict[str, dict[str, Any]] = {}
+    for record in records:
+        for command in record.commands:
+            item = frequencies.setdefault(command.original_name, {"count": 0, "paths": set()})
+            item["count"] += 1
+            item["paths"].add(record.source_path)
+
+    rows = []
+    for original, item in frequencies.items():
+        suggestion = suggest_command(original, sorted(item["paths"])[0])
+        rows.append(
+            {
+                "original_name": original,
+                "count": item["count"],
+                "example_paths": sorted(item["paths"])[:5],
+                "canonical_name": suggestion["canonical_name"],
+                "confidence": suggestion["confidence"],
+                "reason": "; ".join(suggestion["reasons"]),
+                "ambiguity": suggestion["ambiguity"],
+            }
+        )
+    rows.sort(key=lambda row: (-row["count"], row["original_name"].casefold()))
+    _dump_json(analysis_output / "command-name-frequency.json", rows)
+    _dump_csv(
+        analysis_output / "command-name-frequency.csv",
+        rows,
+        [
+            "original_name",
+            "count",
+            "example_paths",
+            "canonical_name",
+            "confidence",
+            "reason",
+            "ambiguity",
+        ],
+    )
+    return sum(row["canonical_name"] is not None for row in rows)
+
+
+def _write_human_sample(
+    records: list[InventoryRecord],
+    classifications: list[dict],
+    models: list[dict],
+    categories: dict[str, dict],
+    previous: dict[str, str],
+    analysis_output: Path,
+) -> int:
+    by_path = {record.source_path: record for record in records}
+    model_by_id = {row["record_id"]: row for row in models}
+    ranked = sorted(
+        classifications,
+        key=lambda row: (
+            -len(row["conflicts"]),
+            -row["evidence"]["signal_count"],
+            row["source_path"],
+        ),
+    )
+    selected: dict[str, dict] = {}
+    for class_name in CLASSES:
+        candidates = [row for row in ranked if row["classification"] == class_name]
+        for row in candidates[:20]:
+            selected[row["record_id"]] = row
+    for row in ranked:
+        if len(selected) >= 200:
+            break
+        selected.setdefault(row["record_id"], row)
+
+    rows = []
+    for classification in sorted(selected.values(), key=lambda row: row["source_path"]):
+        record = by_path[classification["source_path"]]
+        model = model_by_id[classification["record_id"]]
+        rows.append(
+            {
+                "path": record.source_path,
+                "current_classification": previous.get(record.source_path, ""),
+                "suggested_classification": classification["classification"],
+                "category": categories[record.record_id]["normalized_value"],
+                "brand": record.original_brand,
+                "model": model["candidate"],
+                "signal_count": classification["evidence"]["signal_count"],
+                "command_names_preview": [
+                    command.original_name for command in record.commands[:12]
+                ],
+                "protocols_count": classification["evidence"]["protocol_count"],
+                "addresses_count": classification["evidence"]["address_count"],
+                "reasons": classification["reasons"],
+                "human_label": "",
+                "human_notes": "",
+            }
+        )
+    _dump_csv(
+        analysis_output / "human-label-sample.csv",
+        rows,
+        [
+            "path",
+            "current_classification",
+            "suggested_classification",
+            "category",
+            "brand",
+            "model",
+            "signal_count",
+            "command_names_preview",
+            "protocols_count",
+            "addresses_count",
+            "reasons",
+            "human_label",
+            "human_notes",
+        ],
+    )
+    return len(rows)
+
+
+def analyze_reports(
+    report_dir: Path,
+    output_dir: Path,
+    analysis_output: Path | None = None,
+    previous_output: Path | None = None,
+) -> dict[str, Any]:
     records, consumed = load_inventory(report_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     csv_dir = output_dir / "csv"
     csv_dir.mkdir(parents=True, exist_ok=True)
 
     category_rows = []
+    categories_by_record = {}
     brand_rows = []
     model_rows = []
     command_rows = []
@@ -209,11 +386,12 @@ def analyze_reports(report_dir: Path, output_dir: Path) -> dict[str, Any]:
         category = suggest_category(record.original_category, record.source_path)
         brand = suggest_brand(record.original_brand, record.source_path)
         model = extract_model(record)
-        classification = classify(record, model)
+        classification = classify(record, model, category, brand)
         classification["suggested_device_type"] = category["normalized_value"]
         classification["device_type_confidence"] = category["confidence"]
 
         category_rows.append(category)
+        categories_by_record[record.record_id] = category
         brand_rows.append(brand)
         model_rows.append(model)
         classification_rows.append(classification)
@@ -250,14 +428,17 @@ def analyze_reports(report_dir: Path, output_dir: Path) -> dict[str, Any]:
         review_reasons = []
         if classification["requires_review"]:
             review_reasons.append("classificação abaixo do limiar automático ou conflitante")
-        if category["confidence"] < 0.8:
+        if category["confidence"] < 0.6:
             review_reasons.append("categoria ambígua ou ausente")
         if brand["requires_review"]:
             review_reasons.append("marca ambígua ou ausente")
-        if model["requires_review"]:
+        if model["ambiguity"] or (
+            classification["classification"] == "specific_device" and model["confidence"] < 0.65
+        ):
             review_reasons.append("modelo ambíguo ou ausente")
-        if any(item["requires_review"] for item in command_suggestions):
-            review_reasons.append("um ou mais comandos exigem revisão")
+        unknown_commands = sum(item["canonical_name"] is None for item in command_suggestions)
+        if command_suggestions and unknown_commands / len(command_suggestions) >= 0.8:
+            review_reasons.append("maioria dos comandos não foi mapeada")
         if review_reasons:
             review_queue.append(
                 {
@@ -369,6 +550,9 @@ def analyze_reports(report_dir: Path, output_dir: Path) -> dict[str, Any]:
         "brands_suggested": sum(row["suggested_brand_id"] is not None for row in brand_map),
         "models_identified": sum(row["candidate"] is not None for row in model_rows),
         "commands_mapped": sum(row["canonical_name"] is not None for row in command_map),
+        "command_occurrences_mapped": sum(
+            suggestion["canonical_name"] is not None for suggestion in command_rows
+        ),
         "conflicts": len(conflicts),
         "review_queue": len(review_queue),
         "warning": None
@@ -385,6 +569,7 @@ def analyze_reports(report_dir: Path, output_dir: Path) -> dict[str, Any]:
         f"- Marcas sugeridas: {summary['brands_suggested']}",
         f"- Modelos identificados: {summary['models_identified']}",
         f"- Comandos mapeados: {summary['commands_mapped']}",
+        f"- Ocorrências de comandos mapeadas: {summary['command_occurrences_mapped']}",
         f"- Conflitos: {summary['conflicts']}",
         f"- Fila de revisão: {summary['review_queue']}",
         "",
@@ -395,6 +580,18 @@ def analyze_reports(report_dir: Path, output_dir: Path) -> dict[str, Any]:
     if summary["warning"]:
         lines.extend(["", "## Advertência", "", summary["warning"]])
     (output_dir / "normalization-summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if analysis_output is not None:
+        analysis_output.mkdir(parents=True, exist_ok=True)
+        _write_frequency_analysis(records, analysis_output)
+        previous = _previous_classifications(previous_output, report_dir)
+        summary["human_label_sample"] = _write_human_sample(
+            records,
+            classification_rows,
+            model_rows,
+            categories_by_record,
+            previous,
+            analysis_output,
+        )
     return summary
 
 

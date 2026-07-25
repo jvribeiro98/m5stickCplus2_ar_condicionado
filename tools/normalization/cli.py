@@ -18,6 +18,16 @@ def build_parser() -> argparse.ArgumentParser:
     analyze = subparsers.add_parser("analyze", help="Analisa relatórios de inventário.")
     analyze.add_argument("--inventory", type=Path, default=Path("reports"))
     analyze.add_argument("--output", type=Path, default=Path("normalization"))
+    analyze.add_argument(
+        "--analysis-output",
+        type=Path,
+        default=Path("normalization-analysis"),
+    )
+    analyze.add_argument(
+        "--previous-output",
+        type=Path,
+        default=Path("normalization-real"),
+    )
 
     inspect = subparsers.add_parser("inspect", help="Inspeciona propostas por caminho ou ID.")
     inspect.add_argument("query")
@@ -28,7 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "analyze":
-        summary = analyze_reports(args.inventory, args.output)
+        summary = analyze_reports(
+            args.inventory,
+            args.output,
+            analysis_output=args.analysis_output,
+            previous_output=args.previous_output,
+        )
         print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
 

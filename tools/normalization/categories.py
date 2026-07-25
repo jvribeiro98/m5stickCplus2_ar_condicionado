@@ -13,6 +13,20 @@ CATEGORY_ALIASES = {
     "air_conditioner": "air_conditioner",
     "air conditioners": "air_conditioner",
     "ac": "air_conditioner",
+    "acs": "air_conditioner",
+    "air purifiers": "air_purifier",
+    "audio and video receivers": "receiver",
+    "blu ray": "blu_ray_player",
+    "cable boxes": "set_top_box",
+    "cameras": "camera",
+    "consoles": "game_console",
+    "dvd players": "dvd_player",
+    "heaters": "heater",
+    "humidifiers": "humidifier",
+    "led lighting": "led_strip",
+    "streaming devices": "media_player",
+    "tv tuner": "media_player",
+    "universal tv remotes": "tv",
     "fan": "fan",
     "fans": "fan",
     "projector": "projector",
@@ -26,7 +40,6 @@ CATEGORY_ALIASES = {
     "led strip": "led_strip",
     "led_strip": "led_strip",
     "camera": "camera",
-    "cameras": "camera",
     "light": "light",
     "lights": "light",
     "media player": "media_player",
@@ -36,7 +49,6 @@ CATEGORY_ALIASES = {
     "stb": "set_top_box",
     "dvd": "dvd_player",
     "dvd player": "dvd_player",
-    "blu ray": "blu_ray_player",
     "blu-ray": "blu_ray_player",
     "game console": "game_console",
     "heater": "heater",
@@ -49,7 +61,11 @@ CATEGORY_ALIASES = {
 
 
 def normalize_key(value: str) -> str:
-    return re.sub(r"\s+", " ", value.strip().casefold().replace("-", " "))
+    return re.sub(
+        r"\s+",
+        " ",
+        value.strip().casefold().replace("-", " ").replace("_", " "),
+    )
 
 
 def suggest_category(original: str | None, path: str) -> dict:

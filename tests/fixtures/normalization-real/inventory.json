@@ -1,0 +1,108 @@
+{
+  "files": [
+    {
+      "command_names": ["POWER", "BACK", "UP", "VOL-", "VOL+"],
+      "filename": "32_159.ir",
+      "inference": {
+        "brand": {"basis": "path", "confidence": 0.65, "value": "2wire"},
+        "category": {"basis": "path", "confidence": 0.75, "value": "Converted/CSV"},
+        "model": {
+          "basis": "filename; unconfirmed",
+          "confidence": 0.45,
+          "value": "32_159"
+        }
+      },
+      "issues": [],
+      "protocols": ["NECext"],
+      "relative_path": "_Converted_/CSV/0-9/2wire/Unknown_2wire/32_159.ir",
+      "signal_count": 5,
+      "signals": [
+        {
+          "address_original": "20 9F 00 00",
+          "name_original": "POWER",
+          "protocol": "NECext"
+        },
+        {
+          "address_original": "20 9F 00 00",
+          "name_original": "BACK",
+          "protocol": "NECext"
+        },
+        {
+          "address_original": "20 9F 00 00",
+          "name_original": "UP",
+          "protocol": "NECext"
+        },
+        {
+          "address_original": "20 9F 00 00",
+          "name_original": "VOL-",
+          "protocol": "NECext"
+        },
+        {
+          "address_original": "20 9F 00 00",
+          "name_original": "VOL+",
+          "protocol": "NECext"
+        }
+      ]
+    },
+    {
+      "command_names": ["Power1", "Power2", "Power3", "Power4"],
+      "filename": "Power_Codes.ir",
+      "inference": {
+        "brand": {"basis": "path", "confidence": 0.4, "value": "Generic"},
+        "category": {
+          "basis": "path",
+          "confidence": 0.85,
+          "value": "Universal_TV_Remotes"
+        },
+        "model": {
+          "basis": "filename; unconfirmed",
+          "confidence": 0.45,
+          "value": "Power_Codes"
+        }
+      },
+      "issues": [],
+      "protocols": ["NEC", "RC5", "RC6"],
+      "relative_path": "Universal_TV_Remotes/Power_Codes.ir",
+      "signal_count": 64,
+      "signals": [
+        {"address_original": "0x01", "name_original": "Power1", "protocol": "NEC"},
+        {"address_original": "0x02", "name_original": "Power2", "protocol": "RC5"},
+        {"address_original": "0x03", "name_original": "Power3", "protocol": "RC6"},
+        {"address_original": "0x04", "name_original": "Power4", "protocol": "NEC"}
+      ]
+    },
+    {
+      "command_names": ["SPRAY_TOGGLE", "UP", "LEFT", "RIGHT", "DOWN", "OK"],
+      "filename": "Hobot_2S.ir",
+      "inference": {
+        "brand": {"basis": "path", "confidence": 0.7, "value": "HOBOT"},
+        "category": {
+          "basis": "path",
+          "confidence": 0.85,
+          "value": "Window_cleaners"
+        },
+        "model": {
+          "basis": "filename; unconfirmed",
+          "confidence": 0.45,
+          "value": "Hobot_2S"
+        }
+      },
+      "issues": [],
+      "protocols": ["NECext"],
+      "relative_path": "Window_cleaners/HOBOT/Hobot_2S.ir",
+      "signal_count": 6,
+      "signals": [
+        {
+          "address_original": "C5 1F 00 00",
+          "name_original": "SPRAY_TOGGLE",
+          "protocol": "NECext"
+        },
+        {
+          "address_original": "C5 1F 00 00",
+          "name_original": "UP",
+          "protocol": "NECext"
+        }
+      ]
+    }
+  ]
+}
