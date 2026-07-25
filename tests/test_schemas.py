@@ -19,10 +19,7 @@ def load_json(path: Path):
         return json.load(stream)
 
 
-SCHEMAS = {
-    path.name: load_json(path)
-    for path in sorted(SCHEMAS_DIR.glob("*.schema.json"))
-}
+SCHEMAS = {path.name: load_json(path) for path in sorted(SCHEMAS_DIR.glob("*.schema.json"))}
 
 
 def build_registry() -> Registry:
@@ -180,20 +177,14 @@ def test_signal_without_source_is_rejected():
 
 
 def test_device_bindings_resolve_capabilities_and_catalog_signals():
-    signal_ids = {
-        load_json(path)["id"]
-        for path in (EXAMPLES_DIR / "signals").glob("*.json")
-    }
+    signal_ids = {load_json(path)["id"] for path in (EXAMPLES_DIR / "signals").glob("*.json")}
     for path in EXAMPLES_DIR.glob("*.json"):
         assert_device_semantics(load_json(path), signal_ids)
 
 
 def test_broken_binding_reference_is_rejected_semantically():
     device = load_json(EXAMPLES_DIR / "tv.json")
-    signals = {
-        load_json(path)["id"]
-        for path in (EXAMPLES_DIR / "signals").glob("*.json")
-    }
+    signals = {load_json(path)["id"] for path in (EXAMPLES_DIR / "signals").glob("*.json")}
     device["bindings"][0]["signal_ref"] = (
         "signal-sha256-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
     )
@@ -203,27 +194,21 @@ def test_broken_binding_reference_is_rejected_semantically():
 
 def test_stateful_snapshot_and_encoder_reference():
     snapshot = load_json(EXAMPLES_DIR / "signals" / "state-snapshot.json")
-    encoder = load_json(
-        EXAMPLES_DIR / "signals" / "stateful-encoder-reference.json"
-    )
+    encoder = load_json(EXAMPLES_DIR / "signals" / "stateful-encoder-reference.json")
     device = load_json(EXAMPLES_DIR / "air_conditioner.json")
 
     validate("signal.schema.json", snapshot)
     validate("signal.schema.json", encoder)
     validate("device.schema.json", device)
 
-    assert {"power", "temperature", "mode", "fan_speed"} <= set(
-        snapshot["state_snapshot"]["state"]
-    )
+    assert {"power", "temperature", "mode", "fan_speed"} <= set(snapshot["state_snapshot"]["state"])
     required = set(encoder["encoder_reference"]["required_state_fields"])
     modeled = {item["id"] for item in device["state_model"]["properties"]}
     assert required <= modeled
 
 
 def test_offline_bundle_is_self_contained_and_minimal():
-    bundle = load_json(
-        EXAMPLES_DIR / "bundles" / "tv-offline-bundle.json"
-    )
+    bundle = load_json(EXAMPLES_DIR / "bundles" / "tv-offline-bundle.json")
     validate("bundle.schema.json", bundle)
 
     embedded_ids = {signal["id"] for signal in bundle["signals"]}

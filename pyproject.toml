@@ -12,9 +12,17 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
   "jsonschema[format]>=4.23,<5",
-  "pytest>=8.3,<9"
+  "pytest>=8.3,<9",
+  "ruff>=0.9,<1"
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q --basetemp=.pytest-tmp"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

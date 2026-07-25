@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "id": "specific-tv",
+      "path": "TVs/SAMSUNG/KDL55X9000.ir",
+      "category": "Televisions",
+      "brand": "SAMSUNG",
+      "commands": [
+        {"name": "Power", "protocol": "NEC", "address": "0x01"},
+        {"name": "Volume+", "protocol": "NEC", "address": "0x01"}
+      ]
+    },
+    {
+      "id": "universal-power",
+      "path": "Universal/TV/Power_Codes.ir",
+      "category": "TV",
+      "brand": "Generic",
+      "signal_count": 64,
+      "commands": [
+        {"name": "Power1", "protocol": "NEC", "address": "0x01"},
+        {"name": "Power2", "protocol": "NEC", "address": "0x02"},
+        {"name": "Power3", "protocol": "RC5", "address": "0x03"},
+        {"name": "Power4", "protocol": "RC6", "address": "0x04"}
+      ]
+    },
+    {
+      "id": "mixed",
+      "path": "Misc/Mixed/collection.ir",
+      "commands": [
+        {"name": "A", "protocol": "NEC", "address": "0x01"},
+        {"name": "B", "protocol": "RC5", "address": "0x02"},
+        {"name": "C", "protocol": "RC6", "address": "0x03"},
+        {"name": "D", "protocol": "Sony", "address": "0x04"}
+      ]
+    }
+  ]
+}
