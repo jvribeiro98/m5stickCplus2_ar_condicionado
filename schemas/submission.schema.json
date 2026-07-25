@@ -10,6 +10,7 @@
     "submitted_at",
     "submitter",
     "action",
+    "entity_type",
     "target_id",
     "payload",
     "evidence",
@@ -34,6 +35,9 @@
     "action": {
       "enum": ["create", "update", "deprecate", "verify", "report_incompatible"]
     },
+    "entity_type": {
+      "enum": ["device", "signal", "binding", "capability", "protocol", "compatibility", "bundle"]
+    },
     "target_id": {
       "type": ["string", "null"],
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -55,9 +59,9 @@
       "maximum": 1
     },
     "license": {
-      "type": "string",
+      "type": ["string", "null"],
       "pattern": "^[A-Za-z0-9.+-]+$",
-      "description": "Identificador SPDX da licença da contribuição."
+      "description": "Identificador SPDX declarado, ou null quando os direitos ainda precisam ser resolvidos."
     },
     "attestation": {
       "type": "object",

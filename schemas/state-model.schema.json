@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/state-model.schema.json",
+  "title": "OpenIR State Model",
+  "description": "Modelo declarativo das propriedades stateful de um Device.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["properties", "dependencies", "invalid_combinations"],
+  "properties": {
+    "properties": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/stateProperty"},
+      "minItems": 1
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/constraint"}
+    },
+    "invalid_combinations": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/constraint"}
+    }
+  },
+  "$defs": {
+    "stateProperty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "required", "allowed_values", "range", "default", "unit", "description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "type": {
+          "enum": ["boolean", "integer", "number", "string", "enum"]
+        },
+        "required": {"type": "boolean"},
+        "allowed_values": {
+          "type": ["array", "null"],
+          "items": {"type": ["string", "number", "integer", "boolean"]},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "range": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["minimum", "maximum", "step"],
+              "properties": {
+                "minimum": {"type": "number"},
+                "maximum": {"type": "number"},
+                "step": {"type": "number", "exclusiveMinimum": 0}
+              }
+            },
+            {"type": "null"}
+          ]
+        },
+        "default": {"type": ["string", "number", "integer", "boolean", "null"]},
+        "unit": {"type": ["string", "null"], "maxLength": 40},
+        "description": {"type": ["string", "null"], "maxLength": 1000}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"type": {"const": "enum"}}, "required": ["type"]},
+          "then": {"properties": {"allowed_values": {"type": "array"}}}
+        }
+      ]
+    },
+    "constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["if", "then", "description"],
+      "properties": {
+        "if": {"type": "object", "minProperties": 1},
+        "then": {"type": "object", "minProperties": 1},
+        "description": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    }
+  }
+}

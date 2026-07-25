@@ -2,33 +2,31 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://openir.dev/schemas/v1/compatibility.schema.json",
   "title": "OpenIR Compatibility",
-  "description": "Relação de compatibilidade verificada ou alegada entre um perfil e outro dispositivo.",
+  "description": "Relação direcional e baseada em evidência entre dois Devices.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["device_id", "level", "scope", "confidence", "evidence", "notes"],
+  "required": [
+    "target_device_id",
+    "relation",
+    "scope",
+    "confidence",
+    "evidence",
+    "tested_commands",
+    "tested_signals",
+    "notes"
+  ],
   "properties": {
-    "device_id": {
+    "target_device_id": {
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
       "minLength": 3,
       "maxLength": 160
     },
-    "level": {
-      "enum": ["exact", "full", "partial", "family", "unverified", "incompatible"]
+    "relation": {
+      "enum": ["equivalent", "compatible", "subset", "superset", "family", "incompatible", "unknown"]
     },
     "scope": {
-      "oneOf": [
-        {"const": "all"},
-        {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
-          },
-          "minItems": 1,
-          "uniqueItems": true
-        }
-      ]
+      "enum": ["full", "partial", "command_subset", "signal_subset", "unknown"]
     },
     "confidence": {
       "type": "number",
@@ -36,7 +34,34 @@
       "maximum": 1
     },
     "evidence": {
-      "enum": ["measured", "community_tested", "manufacturer", "derived", "reported", "unknown"]
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "description", "uri"],
+        "properties": {
+          "type": {"enum": ["device_test", "capture_comparison", "manufacturer", "community_report", "derived", "other"]},
+          "description": {"type": "string", "minLength": 1, "maxLength": 1000},
+          "uri": {"type": ["string", "null"], "format": "uri"}
+        }
+      },
+      "minItems": 1
+    },
+    "tested_commands": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^binding-[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "uniqueItems": true
+    },
+    "tested_signals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^signal-sha256-[a-f0-9]{64}$"
+      },
+      "uniqueItems": true
     },
     "notes": {
       "type": ["string", "null"],
@@ -49,22 +74,12 @@
   },
   "allOf": [
     {
-      "if": {
-        "properties": {"level": {"const": "partial"}},
-        "required": ["level"]
-      },
-      "then": {
-        "properties": {"scope": {"type": "array"}}
-      }
+      "if": {"properties": {"scope": {"const": "command_subset"}}, "required": ["scope"]},
+      "then": {"properties": {"tested_commands": {"minItems": 1}}}
     },
     {
-      "if": {
-        "properties": {"level": {"enum": ["exact", "full"]}},
-        "required": ["level"]
-      },
-      "then": {
-        "properties": {"scope": {"const": "all"}}
-      }
+      "if": {"properties": {"scope": {"const": "signal_subset"}}, "required": ["scope"]},
+      "then": {"properties": {"tested_signals": {"minItems": 1}}}
     }
   ]
 }

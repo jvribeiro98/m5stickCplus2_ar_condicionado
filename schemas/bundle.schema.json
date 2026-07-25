@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/bundle.schema.json",
+  "title": "OpenIR Bundle",
+  "description": "Pacote de distribuição que preserva referências e inclui apenas os Signals necessários.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "openir_version",
+    "bundle_version",
+    "profile",
+    "metadata",
+    "device",
+    "signals",
+    "bundle_license",
+    "content_hash"
+  ],
+  "properties": {
+    "openir_version": {"const": "1.0"},
+    "bundle_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "profile": {"enum": ["metadata", "device", "offline"]},
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_id", "device_version", "name", "included_signal_ids"],
+      "properties": {
+        "device_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "device_version": {"type": "string"},
+        "name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "included_signal_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^signal-sha256-[a-f0-9]{64}$"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "device": {
+      "oneOf": [
+        {"$ref": "device.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "signals": {
+      "type": "array",
+      "items": {"$ref": "signal.schema.json"},
+      "uniqueItems": true
+    },
+    "bundle_license": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["spdx_id", "name", "url"],
+          "properties": {
+            "spdx_id": {"type": "string", "pattern": "^[A-Za-z0-9.+-]+$"},
+            "name": {"type": "string", "minLength": 1},
+            "url": {"type": ["string", "null"], "format": "uri"}
+          }
+        },
+        {"type": "null"}
+      ],
+      "description": "Só pode ser preenchida quando compatível com as licenças de todos os registros."
+    },
+    "content_hash": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"profile": {"const": "metadata"}}, "required": ["profile"]},
+      "then": {
+        "properties": {
+          "device": {"type": "null"},
+          "signals": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"profile": {"const": "device"}}, "required": ["profile"]},
+      "then": {
+        "properties": {
+          "device": {"type": "object"},
+          "signals": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"profile": {"const": "offline"}}, "required": ["profile"]},
+      "then": {
+        "properties": {
+          "device": {"type": "object"},
+          "signals": {"minItems": 1}
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/binding.schema.json",
+  "title": "OpenIR Binding",
+  "description": "Ação exposta pelo Device que liga uma Capability a um Signal ou operação stateful.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "capability_id",
+    "interaction_type",
+    "signal_ref",
+    "state_operation",
+    "parameters",
+    "aliases",
+    "repeat",
+    "notes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^binding-[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 160
+    },
+    "capability_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+      "maxLength": 100
+    },
+    "interaction_type": {
+      "enum": ["trigger", "toggle", "set_value", "increment", "decrement", "select", "state_update"]
+    },
+    "signal_ref": {
+      "oneOf": [
+        {"type": "string", "pattern": "^signal-sha256-[a-f0-9]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "state_operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signal_ref", "operation", "state"],
+          "properties": {
+            "signal_ref": {
+              "type": "string",
+              "pattern": "^signal-sha256-[a-f0-9]{64}$"
+            },
+            "operation": {"enum": ["apply_snapshot", "encode_state", "update_fields"]},
+            "state": {"type": "object"}
+          }
+        },
+        {"type": "null"}
+      ]
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Parâmetros semânticos da ação, por exemplo value, unit ou enum_value.",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    },
+    "aliases": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1, "maxLength": 120},
+      "uniqueItems": true
+    },
+    "repeat": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["count", "mode", "gap"],
+          "properties": {
+            "count": {"type": "integer", "minimum": 0, "maximum": 255},
+            "mode": {"enum": ["signal_default", "none", "full_frame", "protocol_repeat_frame"]},
+            "gap": {"type": "integer", "minimum": 0, "maximum": 10000000}
+          }
+        },
+        {"type": "null"}
+      ]
+    },
+    "notes": {"type": ["string", "null"], "maxLength": 4000}
+  },
+  "oneOf": [
+    {
+      "properties": {"signal_ref": {"type": "string"}, "state_operation": {"type": "null"}}
+    },
+    {
+      "properties": {"signal_ref": {"type": "null"}, "state_operation": {"type": "object"}}
+    }
+  ]
+}

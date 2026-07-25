@@ -1,0 +1,59 @@
+{
+  "openir_version": "1.0",
+  "id": "signal-sha256-3f5b97302776b108127318a0e96b55dc5de8012d7a52b7ad699cf35b68dd1568",
+  "signal_type": "encoder_reference",
+  "frequency": 38000,
+  "protocol": {
+    "id": "openir-example-ac",
+    "display_name": "OpenIR Example A/C",
+    "variant": "encoder-v1",
+    "state_model": "stateful",
+    "parameters": {},
+    "documentation": null
+  },
+  "raw_data": null,
+  "state_snapshot": null,
+  "encoder_reference": {
+    "encoder_id": "openir-example-ac-encoder",
+    "protocol_id": "openir-example-ac",
+    "encoder_version": "1.0.0",
+    "required_state_fields": ["power", "temperature", "mode", "fan_speed"],
+    "optional_state_fields": ["swing", "turbo", "sleep"]
+  },
+  "repeat": {
+    "count": 0,
+    "mode": "none",
+    "gap": 0
+  },
+  "source": {
+    "origin": "generated",
+    "name": "OpenIR architecture example",
+    "uri": "https://openir.dev/examples/signals/stateful-encoder-reference"
+  },
+  "license": {
+    "spdx_id": "CC0-1.0",
+    "name": "Creative Commons Zero v1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "contributors": [
+    {
+      "id": "openir-example-team",
+      "display_name": "OpenIR Example Team",
+      "roles": ["author"]
+    }
+  ],
+  "confidence": 0.1,
+  "evidence": [
+    {
+      "type": "analysis",
+      "description": "Referência fictícia; não contém implementação executável.",
+      "uri": "https://openir.dev/examples/signals/stateful-encoder-reference",
+      "hash": null
+    }
+  ],
+  "original_hash": null,
+  "original_path": null,
+  "source_commit": null,
+  "captured_at": null,
+  "extensions": {}
+}

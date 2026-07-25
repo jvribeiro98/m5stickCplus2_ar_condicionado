@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://openir.dev/schemas/v1/device.schema.json",
   "title": "OpenIR Device",
-  "description": "Documento canônico e autocontido de um dispositivo controlado por infravermelho.",
+  "description": "Modelo ou família que declara Capabilities e Bindings, sem duplicar Signals globais.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -17,57 +17,36 @@
     "region",
     "manufacturer",
     "capabilities",
-    "commands",
+    "bindings",
+    "state_model",
     "compatibility",
     "contributors",
     "source",
     "license",
     "status",
-    "version"
+    "version",
+    "extensions"
   ],
   "properties": {
-    "openir_version": {
-      "const": "1.0"
-    },
+    "openir_version": {"const": "1.0"},
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
       "minLength": 3,
       "maxLength": 160
     },
-    "category": {
-      "$ref": "category.schema.json"
-    },
-    "brand": {
-      "$ref": "brand.schema.json"
-    },
-    "model": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 160
-    },
+    "category": {"$ref": "category.schema.json"},
+    "brand": {"$ref": "brand.schema.json"},
+    "model": {"type": "string", "minLength": 1, "maxLength": 160},
     "aliases": {
       "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 200
-      },
+      "items": {"type": "string", "minLength": 1, "maxLength": 200},
       "uniqueItems": true
     },
-    "description": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 2000
-    },
-    "year": {
-      "type": ["integer", "null"],
-      "minimum": 1950,
-      "maximum": 2200
-    },
+    "description": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "year": {"type": ["integer", "null"], "minimum": 1950, "maximum": 2200},
     "region": {
       "type": "array",
-      "description": "Códigos ISO 3166-1 alfa-2 em maiúsculas ou o valor global.",
       "items": {
         "oneOf": [
           {"const": "global"},
@@ -77,51 +56,38 @@
       "minItems": 1,
       "uniqueItems": true
     },
-    "manufacturer": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 200
-    },
+    "manufacturer": {"type": "string", "minLength": 1, "maxLength": 200},
     "capabilities": {
       "type": "array",
-      "items": {
-        "$ref": "capability.schema.json"
-      },
+      "items": {"$ref": "capability.schema.json"},
       "minItems": 1
     },
-    "commands": {
+    "bindings": {
       "type": "array",
-      "items": {
-        "$ref": "command.schema.json"
-      },
+      "items": {"$ref": "binding.schema.json"},
       "minItems": 1
+    },
+    "state_model": {
+      "oneOf": [
+        {"$ref": "state-model.schema.json"},
+        {"type": "null"}
+      ]
     },
     "compatibility": {
       "type": "array",
-      "items": {
-        "$ref": "compatibility.schema.json"
-      }
+      "items": {"$ref": "compatibility.schema.json"}
     },
     "contributors": {
       "type": "array",
-      "items": {
-        "$ref": "#/$defs/contributor"
-      },
+      "items": {"$ref": "#/$defs/contributor"},
       "minItems": 1
     },
-    "source": {
-      "$ref": "#/$defs/source"
-    },
-    "license": {
-      "$ref": "#/$defs/license"
-    },
-    "status": {
-      "enum": ["draft", "experimental", "verified", "deprecated", "rejected"]
-    },
+    "source": {"$ref": "#/$defs/source"},
+    "license": {"$ref": "#/$defs/license"},
+    "status": {"enum": ["draft", "experimental", "verified", "deprecated", "rejected"]},
     "version": {
       "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
-      "description": "Versão SemVer do registro do dispositivo."
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
     },
     "supersedes": {
       "type": ["string", "null"],
@@ -129,10 +95,7 @@
     },
     "extensions": {
       "type": "object",
-      "description": "Extensões experimentais com chaves no formato x-organizacao-nome.",
-      "propertyNames": {
-        "pattern": "^x-[a-z0-9]+(?:-[a-z0-9]+)+$"
-      },
+      "propertyNames": {"pattern": "^x-[a-z0-9]+(?:-[a-z0-9]+)+$"},
       "additionalProperties": true
     }
   },
@@ -142,37 +105,24 @@
       "additionalProperties": false,
       "required": ["id", "display_name", "roles"],
       "properties": {
-        "id": {
-          "type": "string",
-          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-          "maxLength": 100
-        },
-        "display_name": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 120
-        },
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "display_name": {"type": "string", "minLength": 1, "maxLength": 120},
         "roles": {
           "type": "array",
-          "items": {
-            "enum": ["author", "capturer", "tester", "reviewer", "maintainer"]
-          },
+          "items": {"enum": ["author", "tester", "reviewer", "maintainer"]},
           "minItems": 1,
           "uniqueItems": true
         },
-        "url": {
-          "type": ["string", "null"],
-          "format": "uri"
-        }
+        "url": {"type": ["string", "null"], "format": "uri"}
       }
     },
     "source": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["origin", "references", "captured_at", "confidence"],
+      "required": ["origin", "references", "confidence"],
       "properties": {
         "origin": {
-          "enum": ["original_capture", "manufacturer_documentation", "community_database", "reverse_engineering", "generated", "converted", "unknown"]
+          "enum": ["manufacturer_documentation", "community_database", "reverse_engineering", "generated", "converted", "unknown"]
         },
         "references": {
           "type": "array",
@@ -188,15 +138,7 @@
           },
           "minItems": 1
         },
-        "captured_at": {
-          "type": ["string", "null"],
-          "format": "date-time"
-        },
-        "confidence": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
-        }
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1}
       }
     },
     "license": {
@@ -204,19 +146,9 @@
       "additionalProperties": false,
       "required": ["spdx_id", "name", "url"],
       "properties": {
-        "spdx_id": {
-          "type": "string",
-          "pattern": "^[A-Za-z0-9.+-]+$"
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 200
-        },
-        "url": {
-          "type": "string",
-          "format": "uri"
-        }
+        "spdx_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9.+-]+$"},
+        "name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "url": {"type": ["string", "null"], "format": "uri"}
       }
     }
   }

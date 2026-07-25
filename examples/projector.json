@@ -11,7 +11,7 @@
   },
   "model": "Cinema 100",
   "aliases": ["C100"],
-  "description": "Exemplo fictício de projetor com protocolo NEC e quadro especial de repetição.",
+  "description": "Projetor fictício com Binding de trigger e Signal NEC compartilhável.",
   "year": 2025,
   "region": ["global"],
   "manufacturer": "ACME Example Devices",
@@ -25,79 +25,23 @@
       "unit": null,
       "allowed_values": null,
       "range": null
-    },
-    {
-      "id": "input",
-      "display_name": "Entrada",
-      "description": "Avança para a próxima entrada.",
-      "aliases": ["Source", "Input"],
-      "value_type": "trigger",
-      "unit": null,
-      "allowed_values": null,
-      "range": null
     }
   ],
-  "commands": [
+  "bindings": [
     {
-      "id": "command-power-on",
-      "display_name": "Ligar",
-      "canonical_name": "power_on",
+      "id": "binding-power-on",
+      "capability_id": "power_on",
+      "interaction_type": "trigger",
+      "signal_ref": "signal-sha256-37dc743c8e477c7e5650a2f0443f2ae7261285497c61e41f4732886c6ec51119",
+      "state_operation": null,
+      "parameters": {},
       "aliases": ["ON"],
-      "encoding_type": "protocol",
-      "protocol": {
-        "id": "nec",
-        "display_name": "NEC",
-        "variant": "standard",
-        "state_model": "stateless",
-        "parameters": {"address": "0x10EF", "command": "0x01", "bits": 32},
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "command",
-        "data": {"function": "power_on"},
-        "base_state": null
-      },
       "repeat": {"count": 1, "mode": "protocol_repeat_frame", "gap": 108000},
-      "frequency": 38000,
-      "notes": "Alguns projetores exigem confirmação; este exemplo demonstra repetição protocolar."
-    },
-    {
-      "id": "command-input",
-      "display_name": "Próxima entrada",
-      "canonical_name": "input",
-      "aliases": ["Source"],
-      "encoding_type": "protocol",
-      "protocol": {
-        "id": "nec",
-        "display_name": "NEC",
-        "variant": "standard",
-        "state_model": "stateless",
-        "parameters": {"address": "0x10EF", "command": "0x09", "bits": 32},
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "command",
-        "data": {"function": "input_next"},
-        "base_state": null
-      },
-      "repeat": {"count": 0, "mode": "none", "gap": 0},
-      "frequency": 38000,
-      "notes": null
+      "notes": "Exemplo de política de repetição específica do Binding."
     }
   ],
-  "compatibility": [
-    {
-      "device_id": "projector-acme-cinema-110",
-      "level": "family",
-      "scope": ["power_on", "input"],
-      "confidence": 0.35,
-      "evidence": "derived",
-      "notes": "Relação fictícia usada para demonstrar compatibilidade de família.",
-      "tested_at": null
-    }
-  ],
+  "state_model": null,
+  "compatibility": [],
   "contributors": [
     {
       "id": "openir-example-team",
@@ -111,12 +55,11 @@
     "references": [
       {
         "uri": "https://openir.dev/examples/projector",
-        "description": "Dados fictícios para validação do schema.",
+        "description": "Device fictício para documentação.",
         "hash": null
       }
     ],
-    "captured_at": null,
-    "confidence": 0.15
+    "confidence": 0.1
   },
   "license": {
     "spdx_id": "CC0-1.0",
@@ -124,7 +67,7 @@
     "url": "https://creativecommons.org/publicdomain/zero/1.0/"
   },
   "status": "draft",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "supersedes": null,
   "extensions": {}
 }

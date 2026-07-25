@@ -1,0 +1,59 @@
+{
+  "openir_version": "1.0",
+  "id": "signal-sha256-2edcb7b1c2fe8651a189a7e99684758ad2b985f18b5d92199f70fad1240c7402",
+  "signal_type": "raw",
+  "frequency": 38000,
+  "protocol": null,
+  "raw_data": {
+    "original": {
+      "format": "pulse_space",
+      "unit": "microseconds",
+      "sequence": [9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 40000],
+      "duty_cycle": 0.33
+    },
+    "normalized": {
+      "format": "pulse_space",
+      "unit": "microseconds",
+      "sequence": [9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 40000],
+      "duty_cycle": 0.33
+    }
+  },
+  "state_snapshot": null,
+  "encoder_reference": null,
+  "repeat": {
+    "count": 0,
+    "mode": "none",
+    "gap": 0
+  },
+  "source": {
+    "origin": "generated",
+    "name": "OpenIR architecture example",
+    "uri": "https://openir.dev/examples/signals/raw"
+  },
+  "license": {
+    "spdx_id": "CC0-1.0",
+    "name": "Creative Commons Zero v1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "contributors": [
+    {
+      "id": "openir-example-team",
+      "display_name": "OpenIR Example Team",
+      "roles": ["author"]
+    }
+  ],
+  "confidence": 0.1,
+  "evidence": [
+    {
+      "type": "analysis",
+      "description": "Timings fictícios; original e normalizado coexistem deliberadamente.",
+      "uri": "https://openir.dev/examples/signals/raw",
+      "hash": null
+    }
+  ],
+  "original_hash": null,
+  "original_path": null,
+  "source_commit": null,
+  "captured_at": null,
+  "extensions": {}
+}

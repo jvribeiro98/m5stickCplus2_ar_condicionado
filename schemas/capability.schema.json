@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://openir.dev/schemas/v1/capability.schema.json",
   "title": "OpenIR Capability",
-  "description": "Ação ou função semântica, independente de marca e de protocolo.",
+  "description": "Capacidade semântica independente de fabricante, Device, botão, Binding, Signal e protocolo.",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "display_name", "aliases", "value_type"],

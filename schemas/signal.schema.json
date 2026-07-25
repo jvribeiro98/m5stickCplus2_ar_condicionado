@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/signal.schema.json",
+  "title": "OpenIR Signal",
+  "description": "Representação IR global, transmissível, deduplicável e endereçada por conteúdo.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "openir_version",
+    "id",
+    "signal_type",
+    "frequency",
+    "protocol",
+    "raw_data",
+    "state_snapshot",
+    "encoder_reference",
+    "repeat",
+    "source",
+    "license",
+    "contributors",
+    "confidence",
+    "evidence",
+    "original_hash",
+    "original_path",
+    "source_commit",
+    "captured_at",
+    "extensions"
+  ],
+  "properties": {
+    "openir_version": {"const": "1.0"},
+    "id": {
+      "type": "string",
+      "pattern": "^signal-sha256-[a-f0-9]{64}$"
+    },
+    "signal_type": {
+      "enum": ["protocol", "raw", "state_snapshot", "encoder_reference", "opaque"]
+    },
+    "frequency": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 1000000,
+      "description": "Frequência da portadora em hertz."
+    },
+    "protocol": {
+      "oneOf": [
+        {"$ref": "protocol.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "raw_data": {
+      "oneOf": [
+        {"$ref": "#/$defs/rawData"},
+        {"type": "null"}
+      ]
+    },
+    "state_snapshot": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state"],
+          "properties": {
+            "state": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": ["string", "number", "integer", "boolean", "null"]
+              }
+            }
+          }
+        },
+        {"type": "null"}
+      ]
+    },
+    "encoder_reference": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "encoder_id",
+            "protocol_id",
+            "encoder_version",
+            "required_state_fields",
+            "optional_state_fields"
+          ],
+          "properties": {
+            "encoder_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "protocol_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "encoder_version": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+            },
+            "required_state_fields": {
+              "type": "array",
+              "items": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"},
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "optional_state_fields": {
+              "type": "array",
+              "items": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"},
+              "uniqueItems": true
+            }
+          }
+        },
+        {"type": "null"}
+      ]
+    },
+    "repeat": {"$ref": "#/$defs/repeat"},
+    "source": {"$ref": "#/$defs/source"},
+    "license": {"$ref": "#/$defs/license"},
+    "contributors": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/contributor"},
+      "minItems": 1
+    },
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "evidence": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/evidence"},
+      "minItems": 1
+    },
+    "original_hash": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Hash do artefato original antes de parsing ou normalização."
+    },
+    "original_path": {
+      "type": ["string", "null"],
+      "maxLength": 1000
+    },
+    "source_commit": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Fa-f0-9]{7,64}$"
+    },
+    "captured_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {"pattern": "^x-[a-z0-9]+(?:-[a-z0-9]+)+$"},
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "rawFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "unit", "sequence", "duty_cycle"],
+      "properties": {
+        "format": {"const": "pulse_space"},
+        "unit": {"const": "microseconds"},
+        "sequence": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 1, "maximum": 10000000},
+          "minItems": 2
+        },
+        "duty_cycle": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "rawData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["original", "normalized"],
+      "properties": {
+        "original": {"$ref": "#/$defs/rawFrame"},
+        "normalized": {
+          "oneOf": [
+            {"$ref": "#/$defs/rawFrame"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "repeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "mode", "gap"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0, "maximum": 255},
+        "mode": {"enum": ["none", "full_frame", "protocol_repeat_frame"]},
+        "gap": {"type": "integer", "minimum": 0, "maximum": 10000000}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "name", "uri"],
+      "properties": {
+        "origin": {
+          "enum": [
+            "original_capture",
+            "manufacturer_documentation",
+            "community_database",
+            "reverse_engineering",
+            "generated",
+            "converted",
+            "unknown"
+          ]
+        },
+        "name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "uri": {"type": ["string", "null"], "format": "uri"}
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spdx_id", "name", "url"],
+      "properties": {
+        "spdx_id": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z0-9.+-]+$",
+          "description": "null quando a licença ainda é desconhecida; o Signal não pode ser redistribuído até resolução."
+        },
+        "name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "url": {"type": ["string", "null"], "format": "uri"}
+      }
+    },
+    "contributor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "roles"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "display_name": {"type": "string", "minLength": 1, "maxLength": 120},
+        "roles": {
+          "type": "array",
+          "items": {"enum": ["author", "capturer", "tester", "reviewer", "maintainer", "importer"]},
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "uri", "hash"],
+      "properties": {
+        "type": {"enum": ["capture", "device_test", "manufacturer_document", "source_record", "analysis", "other"]},
+        "description": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "uri": {"type": ["string", "null"], "format": "uri"},
+        "hash": {"type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"signal_type": {"const": "protocol"}}, "required": ["signal_type"]},
+      "then": {
+        "properties": {
+          "protocol": {"type": "object"},
+          "state_snapshot": {"type": "null"},
+          "encoder_reference": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"signal_type": {"const": "raw"}}, "required": ["signal_type"]},
+      "then": {
+        "properties": {
+          "raw_data": {"type": "object"},
+          "state_snapshot": {"type": "null"},
+          "encoder_reference": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"signal_type": {"const": "state_snapshot"}}, "required": ["signal_type"]},
+      "then": {
+        "properties": {
+          "state_snapshot": {"type": "object"},
+          "encoder_reference": {"type": "null"}
+        },
+        "anyOf": [
+          {"properties": {"raw_data": {"type": "object"}}},
+          {"properties": {"protocol": {"type": "object"}}}
+        ]
+      }
+    },
+    {
+      "if": {"properties": {"signal_type": {"const": "encoder_reference"}}, "required": ["signal_type"]},
+      "then": {
+        "properties": {
+          "encoder_reference": {"type": "object"},
+          "state_snapshot": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"signal_type": {"const": "opaque"}}, "required": ["signal_type"]},
+      "then": {
+        "properties": {
+          "raw_data": {"type": "object"},
+          "state_snapshot": {"type": "null"},
+          "encoder_reference": {"type": "null"}
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "_schema": "signal.schema.json",
+  "signal_type": "raw",
+  "raw_data": {
+    "original": {
+      "format": "pulse_space",
+      "unit": "microseconds",
+      "sequence": [-9000, 4500],
+      "duty_cycle": null
+    }
+  }
+}

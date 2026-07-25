@@ -1,26 +1,26 @@
 {
   "openir_version": "1.0",
-  "id": "air-conditioner-samsung-example-inverter",
+  "id": "air-conditioner-acme-climate-1",
   "category": "air_conditioner",
   "brand": {
-    "id": "samsung",
-    "display_name": "Samsung",
-    "aliases": ["Samsung Electronics"],
-    "manufacturer": "Samsung Electronics",
-    "website": "https://www.samsung.com/"
+    "id": "acme",
+    "display_name": "ACME",
+    "aliases": [],
+    "manufacturer": "ACME Example Devices",
+    "website": null
   },
-  "model": "Example Inverter",
-  "aliases": ["Example AC"],
-  "description": "Exemplo de ar-condicionado stateful com snapshots completos.",
-  "year": null,
+  "model": "Climate 1",
+  "aliases": ["C1 AC"],
+  "description": "Ar-condicionado fictício com snapshot capturado e referência de encoder.",
+  "year": 2025,
   "region": ["global"],
-  "manufacturer": "Samsung Electronics",
+  "manufacturer": "ACME Example Devices",
   "capabilities": [
     {
       "id": "power",
       "display_name": "Energia",
-      "description": "Estado de energia desejado.",
-      "aliases": ["Power", "Liga/Desliga"],
+      "description": "Estado de energia.",
+      "aliases": ["Power"],
       "value_type": "boolean",
       "unit": null,
       "allowed_values": null,
@@ -40,7 +40,7 @@
       "id": "mode",
       "display_name": "Modo",
       "description": "Modo de operação.",
-      "aliases": ["Mode", "Modo AC"],
+      "aliases": ["Mode"],
       "value_type": "enum",
       "unit": null,
       "allowed_values": ["auto", "cool", "dry", "fan", "heat"],
@@ -50,111 +50,113 @@
       "id": "fan_speed",
       "display_name": "Ventilação",
       "description": "Velocidade do ventilador.",
-      "aliases": ["Fan", "Fan speed"],
+      "aliases": ["Fan"],
       "value_type": "enum",
       "unit": null,
-      "allowed_values": ["auto", "low", "medium", "high", "turbo"],
+      "allowed_values": ["auto", "low", "medium", "high"],
       "range": null
     }
   ],
-  "commands": [
+  "bindings": [
     {
-      "id": "command-state-cool-23-auto-on",
-      "display_name": "Ligar em frio, 23 °C, automático",
-      "canonical_name": "power",
-      "aliases": ["Cool 23 Auto On"],
-      "encoding_type": "stateful",
-      "protocol": {
-        "id": "samsung-ac",
-        "display_name": "Samsung A/C",
-        "variant": "extended-state",
-        "state_model": "stateful",
-        "parameters": {"model": "generic", "extended": true},
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "state_snapshot",
-        "data": {
+      "id": "binding-preset-cool-23",
+      "capability_id": "temperature",
+      "interaction_type": "state_update",
+      "signal_ref": null,
+      "state_operation": {
+        "signal_ref": "signal-sha256-0ab738f09a668df2f92a0279d9cd673c07436237daf17987a8f46ae9e3e7cacd",
+        "operation": "apply_snapshot",
+        "state": {
           "power": true,
           "temperature": 23,
           "mode": "cool",
           "fan_speed": "auto",
-          "swing_vertical": true,
+          "swing": true,
           "turbo": false,
-          "sleep_minutes": 0
-        },
-        "base_state": null
+          "sleep": false
+        }
       },
-      "repeat": {"count": 0, "mode": "none", "gap": 0},
-      "frequency": 38000,
-      "notes": "Snapshot autossuficiente; os valores são demonstrativos."
+      "parameters": {"value": 23, "unit": "celsius"},
+      "aliases": ["Frio 23"],
+      "repeat": null,
+      "notes": "Usa um snapshot fixo já disponível."
     },
     {
-      "id": "command-state-cool-24-auto-on",
-      "display_name": "Ligar em frio, 24 °C, automático",
-      "canonical_name": "temperature",
-      "aliases": ["Cool 24 Auto On"],
-      "encoding_type": "stateful",
-      "protocol": {
-        "id": "samsung-ac",
-        "display_name": "Samsung A/C",
-        "variant": "extended-state",
-        "state_model": "stateful",
-        "parameters": {"model": "generic", "extended": true},
-        "documentation": null
+      "id": "binding-set-temperature",
+      "capability_id": "temperature",
+      "interaction_type": "set_value",
+      "signal_ref": null,
+      "state_operation": {
+        "signal_ref": "signal-sha256-3f5b97302776b108127318a0e96b55dc5de8012d7a52b7ad699cf35b68dd1568",
+        "operation": "encode_state",
+        "state": {
+          "temperature": 23
+        }
       },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "state_snapshot",
-        "data": {
-          "power": true,
-          "temperature": 24,
-          "mode": "cool",
-          "fan_speed": "auto",
-          "swing_vertical": true,
-          "turbo": false,
-          "sleep_minutes": 0
-        },
-        "base_state": null
-      },
-      "repeat": {"count": 0, "mode": "none", "gap": 0},
-      "frequency": 38000,
-      "notes": "Outro snapshot completo, não um código isolado de temperatura +."
-    },
-    {
-      "id": "command-state-off",
-      "display_name": "Desligar",
-      "canonical_name": "power",
-      "aliases": ["Off", "Power Off"],
-      "encoding_type": "stateful",
-      "protocol": {
-        "id": "samsung-ac",
-        "display_name": "Samsung A/C",
-        "variant": "extended-state",
-        "state_model": "stateful",
-        "parameters": {"model": "generic", "extended": true},
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "state_snapshot",
-        "data": {
-          "power": false,
-          "temperature": 24,
-          "mode": "cool",
-          "fan_speed": "auto",
-          "swing_vertical": true,
-          "turbo": false,
-          "sleep_minutes": 0
-        },
-        "base_state": null
-      },
-      "repeat": {"count": 0, "mode": "none", "gap": 0},
-      "frequency": 38000,
-      "notes": null
+      "parameters": {"minimum": 16, "maximum": 30, "step": 1, "unit": "celsius"},
+      "aliases": ["Set temperature"],
+      "repeat": null,
+      "notes": "Só é utilizável quando o consumidor implementa o encoder compatível."
     }
   ],
+  "state_model": {
+    "properties": [
+      {
+        "id": "power",
+        "type": "boolean",
+        "required": true,
+        "allowed_values": null,
+        "range": null,
+        "default": false,
+        "unit": null,
+        "description": "Estado de energia."
+      },
+      {
+        "id": "temperature",
+        "type": "integer",
+        "required": true,
+        "allowed_values": null,
+        "range": {"minimum": 16, "maximum": 30, "step": 1},
+        "default": 23,
+        "unit": "celsius",
+        "description": "Temperatura-alvo."
+      },
+      {
+        "id": "mode",
+        "type": "enum",
+        "required": true,
+        "allowed_values": ["auto", "cool", "dry", "fan", "heat"],
+        "range": null,
+        "default": "cool",
+        "unit": null,
+        "description": "Modo de operação."
+      },
+      {
+        "id": "fan_speed",
+        "type": "enum",
+        "required": true,
+        "allowed_values": ["auto", "low", "medium", "high"],
+        "range": null,
+        "default": "auto",
+        "unit": null,
+        "description": "Velocidade do ventilador."
+      }
+    ],
+    "dependencies": [
+      {
+        "if": {"mode": "auto"},
+        "then": {"fan_speed": "auto"},
+        "description": "No modo automático, a ventilação também é automática."
+      }
+    ],
+    "invalid_combinations": [
+      {
+        "if": {"mode": "dry"},
+        "then": {"fan_speed": "high"},
+        "description": "Ventilação alta em modo dry é uma combinação inválida conhecida."
+      }
+    ]
+  },
   "compatibility": [],
   "contributors": [
     {
@@ -169,20 +171,19 @@
     "references": [
       {
         "uri": "https://openir.dev/examples/air-conditioner",
-        "description": "Exemplo estrutural de protocolo stateful.",
+        "description": "Device fictício para documentação stateful.",
         "hash": null
       }
     ],
-    "captured_at": null,
-    "confidence": 0.25
+    "confidence": 0.1
   },
   "license": {
     "spdx_id": "CC0-1.0",
     "name": "Creative Commons Zero v1.0 Universal",
     "url": "https://creativecommons.org/publicdomain/zero/1.0/"
   },
-  "status": "experimental",
-  "version": "1.0.0",
+  "status": "draft",
+  "version": "2.0.0",
   "supersedes": null,
   "extensions": {}
 }

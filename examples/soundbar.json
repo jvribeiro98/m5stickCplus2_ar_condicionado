@@ -11,82 +11,36 @@
   },
   "model": "Stage 20",
   "aliases": ["S20 Soundbar"],
-  "description": "Exemplo fictício de soundbar com comandos protocolados.",
+  "description": "Soundbar fictícia com Binding incremental.",
   "year": 2025,
   "region": ["US", "BR"],
   "manufacturer": "ACME Example Devices",
   "capabilities": [
     {
-      "id": "volume_down",
-      "display_name": "Diminuir volume",
-      "description": "Diminui o volume em um passo.",
-      "aliases": ["VOL-", "Volume-", "Vol Down"],
-      "value_type": "trigger",
-      "unit": null,
-      "allowed_values": null,
-      "range": null
-    },
-    {
-      "id": "sound_mode",
-      "display_name": "Modo de som",
-      "description": "Seleciona o próximo perfil de som.",
-      "aliases": ["Sound Mode", "Effect"],
+      "id": "volume_up",
+      "display_name": "Aumentar volume",
+      "description": "Aumenta o volume.",
+      "aliases": ["VOL+", "Volume+"],
       "value_type": "trigger",
       "unit": null,
       "allowed_values": null,
       "range": null
     }
   ],
-  "commands": [
+  "bindings": [
     {
-      "id": "command-volume-down",
-      "display_name": "Volume -",
-      "canonical_name": "volume_down",
-      "aliases": ["VOL-", "Volume-"],
-      "encoding_type": "protocol",
-      "protocol": {
-        "id": "nec",
-        "display_name": "NEC",
-        "variant": "extended",
-        "state_model": "stateless",
-        "parameters": {"address": "0x20DF", "command": "0x0B", "bits": 32},
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "command",
-        "data": {"function": "volume_down"},
-        "base_state": null
-      },
-      "repeat": {"count": 1, "mode": "protocol_repeat_frame", "gap": 108000},
-      "frequency": 38000,
+      "id": "binding-volume-up",
+      "capability_id": "volume_up",
+      "interaction_type": "increment",
+      "signal_ref": "signal-sha256-2edcb7b1c2fe8651a189a7e99684758ad2b985f18b5d92199f70fad1240c7402",
+      "state_operation": null,
+      "parameters": {"step": 1},
+      "aliases": ["VOL+"],
+      "repeat": {"count": 1, "mode": "full_frame", "gap": 40000},
       "notes": null
-    },
-    {
-      "id": "command-sound-mode",
-      "display_name": "Próximo modo de som",
-      "canonical_name": "sound_mode",
-      "aliases": ["Effect"],
-      "encoding_type": "protocol",
-      "protocol": {
-        "id": "nec",
-        "display_name": "NEC",
-        "variant": "extended",
-        "state_model": "stateless",
-        "parameters": {"address": "0x20DF", "command": "0x12", "bits": 32},
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "command",
-        "data": {"function": "sound_mode_next"},
-        "base_state": null
-      },
-      "repeat": {"count": 0, "mode": "none", "gap": 0},
-      "frequency": 38000,
-      "notes": "Comando fictício para exemplificar uma capability específica de áudio."
     }
   ],
+  "state_model": null,
   "compatibility": [],
   "contributors": [
     {
@@ -101,12 +55,11 @@
     "references": [
       {
         "uri": "https://openir.dev/examples/soundbar",
-        "description": "Dados fictícios para documentação.",
+        "description": "Device fictício para documentação.",
         "hash": null
       }
     ],
-    "captured_at": null,
-    "confidence": 0.15
+    "confidence": 0.1
   },
   "license": {
     "spdx_id": "CC0-1.0",
@@ -114,7 +67,7 @@
     "url": "https://creativecommons.org/publicdomain/zero/1.0/"
   },
   "status": "draft",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "supersedes": null,
   "extensions": {}
 }

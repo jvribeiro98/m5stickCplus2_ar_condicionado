@@ -1,0 +1,151 @@
+{
+  "openir_version": "1.0",
+  "bundle_version": "1.0.0",
+  "profile": "offline",
+  "metadata": {
+    "device_id": "tv-acme-offline-1",
+    "device_version": "1.0.0",
+    "name": "ACME Offline 1 — controle mínimo",
+    "included_signal_ids": [
+      "signal-sha256-37dc743c8e477c7e5650a2f0443f2ae7261285497c61e41f4732886c6ec51119"
+    ]
+  },
+  "device": {
+    "openir_version": "1.0",
+    "id": "tv-acme-offline-1",
+    "category": "tv",
+    "brand": {
+      "id": "acme",
+      "display_name": "ACME",
+      "aliases": [],
+      "manufacturer": "ACME Example Devices",
+      "website": null
+    },
+    "model": "Offline 1",
+    "aliases": [],
+    "description": "Device fictício mínimo incorporado em bundle para uso sem rede.",
+    "year": 2025,
+    "region": ["global"],
+    "manufacturer": "ACME Example Devices",
+    "capabilities": [
+      {
+        "id": "power",
+        "display_name": "Energia",
+        "description": "Alterna a energia.",
+        "aliases": ["Power"],
+        "value_type": "trigger",
+        "unit": null,
+        "allowed_values": null,
+        "range": null
+      }
+    ],
+    "bindings": [
+      {
+        "id": "binding-power-toggle",
+        "capability_id": "power",
+        "interaction_type": "toggle",
+        "signal_ref": "signal-sha256-37dc743c8e477c7e5650a2f0443f2ae7261285497c61e41f4732886c6ec51119",
+        "state_operation": null,
+        "parameters": {},
+        "aliases": ["Power"],
+        "repeat": null,
+        "notes": null
+      }
+    ],
+    "state_model": null,
+    "compatibility": [],
+    "contributors": [
+      {
+        "id": "openir-example-team",
+        "display_name": "OpenIR Example Team",
+        "roles": ["author"],
+        "url": "https://openir.dev/"
+      }
+    ],
+    "source": {
+      "origin": "generated",
+      "references": [
+        {
+          "uri": "https://openir.dev/examples/bundles/tv-offline",
+          "description": "Device fictício incorporado no bundle.",
+          "hash": null
+        }
+      ],
+      "confidence": 0.1
+    },
+    "license": {
+      "spdx_id": "CC0-1.0",
+      "name": "Creative Commons Zero v1.0 Universal",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    "status": "draft",
+    "version": "1.0.0",
+    "supersedes": null,
+    "extensions": {}
+  },
+  "signals": [
+    {
+      "openir_version": "1.0",
+      "id": "signal-sha256-37dc743c8e477c7e5650a2f0443f2ae7261285497c61e41f4732886c6ec51119",
+      "signal_type": "protocol",
+      "frequency": 38000,
+      "protocol": {
+        "id": "nec",
+        "display_name": "NEC",
+        "variant": "standard",
+        "state_model": "stateless",
+        "parameters": {
+          "address": "0x10EF",
+          "command": "0x01",
+          "bits": 32
+        },
+        "documentation": null
+      },
+      "raw_data": null,
+      "state_snapshot": null,
+      "encoder_reference": null,
+      "repeat": {
+        "count": 0,
+        "mode": "none",
+        "gap": 0
+      },
+      "source": {
+        "origin": "generated",
+        "name": "OpenIR architecture example",
+        "uri": "https://openir.dev/examples/signals/parsed-nec"
+      },
+      "license": {
+        "spdx_id": "CC0-1.0",
+        "name": "Creative Commons Zero v1.0 Universal",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "contributors": [
+        {
+          "id": "openir-example-team",
+          "display_name": "OpenIR Example Team",
+          "roles": ["author"]
+        }
+      ],
+      "confidence": 0.2,
+      "evidence": [
+        {
+          "type": "analysis",
+          "description": "Sinal fictício incorporado para funcionamento offline.",
+          "uri": "https://openir.dev/examples/signals/parsed-nec",
+          "hash": null
+        }
+      ],
+      "original_hash": null,
+      "original_path": null,
+      "source_commit": null,
+      "captured_at": null,
+      "extensions": {}
+    }
+  ],
+  "bundle_license": {
+    "spdx_id": "CC0-1.0",
+    "name": "Creative Commons Zero v1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "content_hash": null
+}

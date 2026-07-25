@@ -1,0 +1,8 @@
+{
+  "_schema": "signal.schema.json",
+  "openir_version": "1.0",
+  "id": "signal-sha256-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "signal_type": "protocol",
+  "frequency": 38000,
+  "protocol": null
+}

@@ -1,25 +1,25 @@
 {
   "openir_version": "1.0",
-  "id": "tv-samsung-au7700",
+  "id": "tv-acme-vision-1",
   "category": "tv",
   "brand": {
-    "id": "samsung",
-    "display_name": "Samsung",
-    "aliases": ["Samsung Electronics"],
-    "manufacturer": "Samsung Electronics",
-    "website": "https://www.samsung.com/"
+    "id": "acme",
+    "display_name": "ACME",
+    "aliases": [],
+    "manufacturer": "ACME Example Devices",
+    "website": null
   },
-  "model": "AU7700",
-  "aliases": ["AU7700 Series", "Crystal UHD AU7700"],
-  "description": "Exemplo OpenIR de um televisor com comandos baseados em protocolo.",
-  "year": 2021,
-  "region": ["BR"],
-  "manufacturer": "Samsung Electronics",
+  "model": "Vision 1",
+  "aliases": ["V1 TV"],
+  "description": "Televisor fictício que referencia Signals globais sem incorporar timings.",
+  "year": 2025,
+  "region": ["global"],
+  "manufacturer": "ACME Example Devices",
   "capabilities": [
     {
       "id": "power",
       "display_name": "Energia",
-      "description": "Alterna o estado de energia.",
+      "description": "Alterna a energia.",
       "aliases": ["Power", "Liga/Desliga"],
       "value_type": "trigger",
       "unit": null,
@@ -30,126 +30,54 @@
       "id": "volume_up",
       "display_name": "Aumentar volume",
       "description": "Aumenta o volume em um passo.",
-      "aliases": ["VOL+", "Volume+", "Vol Up", "volume_up"],
-      "value_type": "trigger",
-      "unit": null,
-      "allowed_values": null,
-      "range": null
-    },
-    {
-      "id": "mute",
-      "display_name": "Mudo",
-      "description": "Alterna o silenciamento de áudio.",
-      "aliases": ["Mute", "Silêncio"],
+      "aliases": ["VOL+", "Volume+", "Vol Up"],
       "value_type": "trigger",
       "unit": null,
       "allowed_values": null,
       "range": null
     }
   ],
-  "commands": [
+  "bindings": [
     {
-      "id": "command-power",
-      "display_name": "Liga/Desliga",
-      "canonical_name": "power",
+      "id": "binding-power-toggle",
+      "capability_id": "power",
+      "interaction_type": "toggle",
+      "signal_ref": "signal-sha256-37dc743c8e477c7e5650a2f0443f2ae7261285497c61e41f4732886c6ec51119",
+      "state_operation": null,
+      "parameters": {},
       "aliases": ["Power"],
-      "encoding_type": "protocol",
-      "protocol": {
-        "id": "samsung32",
-        "display_name": "Samsung 32-bit",
-        "variant": null,
-        "state_model": "stateless",
-        "parameters": {
-          "address": "0x0707",
-          "command": "0x02",
-          "bits": 32
-        },
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "command",
-        "data": {"function": "power_toggle"},
-        "base_state": null
-      },
-      "repeat": {"count": 0, "mode": "none", "gap": 0},
-      "frequency": 38000,
-      "notes": "Valores ilustrativos para demonstrar a estrutura."
-    },
-    {
-      "id": "command-volume-up",
-      "display_name": "Volume +",
-      "canonical_name": "volume_up",
-      "aliases": ["VOL+", "Volume+"],
-      "encoding_type": "protocol",
-      "protocol": {
-        "id": "samsung32",
-        "display_name": "Samsung 32-bit",
-        "variant": null,
-        "state_model": "stateless",
-        "parameters": {
-          "address": "0x0707",
-          "command": "0x07",
-          "bits": 32
-        },
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "command",
-        "data": {"function": "volume_up"},
-        "base_state": null
-      },
-      "repeat": {"count": 1, "mode": "full_frame", "gap": 45000},
-      "frequency": 38000,
-      "notes": "Exemplo de política de repetição."
-    },
-    {
-      "id": "command-mute",
-      "display_name": "Mudo",
-      "canonical_name": "mute",
-      "aliases": ["Mute"],
-      "encoding_type": "protocol",
-      "protocol": {
-        "id": "samsung32",
-        "display_name": "Samsung 32-bit",
-        "variant": null,
-        "state_model": "stateless",
-        "parameters": {
-          "address": "0x0707",
-          "command": "0x0F",
-          "bits": 32
-        },
-        "documentation": null
-      },
-      "raw_data": null,
-      "parsed_data": {
-        "representation": "command",
-        "data": {"function": "mute_toggle"},
-        "base_state": null
-      },
-      "repeat": {"count": 0, "mode": "none", "gap": 0},
-      "frequency": 38000,
+      "repeat": null,
       "notes": null
+    },
+    {
+      "id": "binding-volume-up",
+      "capability_id": "volume_up",
+      "interaction_type": "increment",
+      "signal_ref": "signal-sha256-2edcb7b1c2fe8651a189a7e99684758ad2b985f18b5d92199f70fad1240c7402",
+      "state_operation": null,
+      "parameters": {"step": 1},
+      "aliases": ["VOL+", "Volume+"],
+      "repeat": {"count": 1, "mode": "full_frame", "gap": 40000},
+      "notes": "A política do Binding sobrescreve a repetição padrão do Signal."
     }
   ],
+  "state_model": null,
   "compatibility": [
     {
-      "device_id": "tv-samsung-au8000",
-      "level": "full",
-      "scope": "all",
-      "confidence": 0.72,
-      "evidence": "community_tested",
-      "notes": "Exemplo de compatibilidade; requer confirmação antes de publicação real.",
-      "tested_at": "2026-07-25T12:00:00Z"
-    },
-    {
-      "device_id": "tv-samsung-au9000",
-      "level": "partial",
-      "scope": ["power", "volume_up", "mute"],
-      "confidence": 0.55,
-      "evidence": "reported",
-      "notes": "Somente as capabilities listadas foram relatadas.",
+      "target_device_id": "tv-acme-vision-2",
+      "relation": "compatible",
+      "scope": "signal_subset",
+      "confidence": 0.5,
+      "evidence": [
+        {
+          "type": "community_report",
+          "description": "Somente o Signal de energia foi relatado como compatível.",
+          "uri": null
+        }
+      ],
+      "tested_commands": ["binding-power-toggle"],
+      "tested_signals": ["signal-sha256-37dc743c8e477c7e5650a2f0443f2ae7261285497c61e41f4732886c6ec51119"],
+      "notes": "Compartilhar um Signal não implica compatibilidade total.",
       "tested_at": null
     }
   ],
@@ -157,7 +85,7 @@
     {
       "id": "openir-example-team",
       "display_name": "OpenIR Example Team",
-      "roles": ["author", "reviewer"],
+      "roles": ["author"],
       "url": "https://openir.dev/"
     }
   ],
@@ -166,20 +94,19 @@
     "references": [
       {
         "uri": "https://openir.dev/examples/tv",
-        "description": "Registro demonstrativo; não deve ser tratado como captura verificada.",
+        "description": "Device fictício para documentação arquitetural.",
         "hash": null
       }
     ],
-    "captured_at": null,
-    "confidence": 0.4
+    "confidence": 0.1
   },
   "license": {
     "spdx_id": "CC0-1.0",
     "name": "Creative Commons Zero v1.0 Universal",
     "url": "https://creativecommons.org/publicdomain/zero/1.0/"
   },
-  "status": "experimental",
-  "version": "1.0.0",
+  "status": "draft",
+  "version": "2.0.0",
   "supersedes": null,
   "extensions": {}
 }

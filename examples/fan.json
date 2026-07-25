@@ -11,7 +11,7 @@
   },
   "model": "Breeze 3",
   "aliases": ["Breeze III"],
-  "description": "Exemplo fictício de ventilador representado por capturas RAW.",
+  "description": "Ventilador fictício que usa referência a Signal RAW global.",
   "year": 2025,
   "region": ["BR"],
   "manufacturer": "ACME Example Devices",
@@ -20,67 +20,33 @@
       "id": "power",
       "display_name": "Energia",
       "description": "Alterna a energia.",
-      "aliases": ["Power", "Liga/Desliga"],
-      "value_type": "trigger",
-      "unit": null,
-      "allowed_values": null,
-      "range": null
-    },
-    {
-      "id": "fan_speed",
-      "display_name": "Velocidade",
-      "description": "Avança a velocidade do ventilador.",
-      "aliases": ["Speed", "Velocidade"],
-      "value_type": "trigger",
-      "unit": null,
-      "allowed_values": null,
-      "range": null
-    }
-  ],
-  "commands": [
-    {
-      "id": "command-power",
-      "display_name": "Liga/Desliga",
-      "canonical_name": "power",
       "aliases": ["Power"],
-      "encoding_type": "raw",
-      "protocol": null,
-      "raw_data": {
-        "format": "pulse_space",
-        "unit": "microseconds",
-        "sequence": [9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 40000],
-        "duty_cycle": 0.33
-      },
-      "parsed_data": null,
-      "repeat": {"count": 0, "mode": "none", "gap": 0},
-      "frequency": 38000,
-      "notes": "Sequência curta e fictícia, incluída apenas para demonstrar o formato RAW."
-    },
-    {
-      "id": "command-fan-speed",
-      "display_name": "Próxima velocidade",
-      "canonical_name": "fan_speed",
-      "aliases": ["Speed"],
-      "encoding_type": "raw",
-      "protocol": null,
-      "raw_data": {
-        "format": "pulse_space",
-        "unit": "microseconds",
-        "sequence": [9000, 4500, 560, 1690, 560, 560, 560, 1690, 560, 40000],
-        "duty_cycle": null
-      },
-      "parsed_data": null,
-      "repeat": {"count": 1, "mode": "full_frame", "gap": 40000},
-      "frequency": 38000,
-      "notes": "Demonstra duty cycle desconhecido e repetição do quadro completo."
+      "value_type": "trigger",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
     }
   ],
+  "bindings": [
+    {
+      "id": "binding-power-toggle",
+      "capability_id": "power",
+      "interaction_type": "toggle",
+      "signal_ref": "signal-sha256-2edcb7b1c2fe8651a189a7e99684758ad2b985f18b5d92199f70fad1240c7402",
+      "state_operation": null,
+      "parameters": {},
+      "aliases": ["Power"],
+      "repeat": null,
+      "notes": null
+    }
+  ],
+  "state_model": null,
   "compatibility": [],
   "contributors": [
     {
       "id": "openir-example-team",
       "display_name": "OpenIR Example Team",
-      "roles": ["author", "capturer"],
+      "roles": ["author"],
       "url": "https://openir.dev/"
     }
   ],
@@ -89,11 +55,10 @@
     "references": [
       {
         "uri": "https://openir.dev/examples/fan",
-        "description": "Dados fictícios criados para documentação.",
+        "description": "Device fictício para documentação.",
         "hash": null
       }
     ],
-    "captured_at": null,
     "confidence": 0.1
   },
   "license": {
@@ -102,7 +67,7 @@
     "url": "https://creativecommons.org/publicdomain/zero/1.0/"
   },
   "status": "draft",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "supersedes": null,
   "extensions": {}
 }

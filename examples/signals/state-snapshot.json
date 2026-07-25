@@ -1,0 +1,65 @@
+{
+  "openir_version": "1.0",
+  "id": "signal-sha256-0ab738f09a668df2f92a0279d9cd673c07436237daf17987a8f46ae9e3e7cacd",
+  "signal_type": "state_snapshot",
+  "frequency": 38000,
+  "protocol": {
+    "id": "openir-example-ac",
+    "display_name": "OpenIR Example A/C",
+    "variant": "snapshot-v1",
+    "state_model": "stateful",
+    "parameters": {
+      "frame": "0xA10B17100100"
+    },
+    "documentation": null
+  },
+  "raw_data": null,
+  "state_snapshot": {
+    "state": {
+      "power": true,
+      "temperature": 23,
+      "mode": "cool",
+      "fan_speed": "auto",
+      "swing": true,
+      "turbo": false,
+      "sleep": false
+    }
+  },
+  "encoder_reference": null,
+  "repeat": {
+    "count": 0,
+    "mode": "none",
+    "gap": 0
+  },
+  "source": {
+    "origin": "generated",
+    "name": "OpenIR architecture example",
+    "uri": "https://openir.dev/examples/signals/state-snapshot"
+  },
+  "license": {
+    "spdx_id": "CC0-1.0",
+    "name": "Creative Commons Zero v1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "contributors": [
+    {
+      "id": "openir-example-team",
+      "display_name": "OpenIR Example Team",
+      "roles": ["author"]
+    }
+  ],
+  "confidence": 0.1,
+  "evidence": [
+    {
+      "type": "analysis",
+      "description": "Snapshot fictício usado para demonstrar estado multivariável.",
+      "uri": "https://openir.dev/examples/signals/state-snapshot",
+      "hash": null
+    }
+  ],
+  "original_hash": null,
+  "original_path": null,
+  "source_commit": null,
+  "captured_at": null,
+  "extensions": {}
+}
