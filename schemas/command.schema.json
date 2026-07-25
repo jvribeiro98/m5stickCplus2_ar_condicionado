@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/command.schema.json",
+  "title": "OpenIR Command",
+  "description": "Uma realização infravermelha de uma capacidade canônica.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "display_name",
+    "canonical_name",
+    "encoding_type",
+    "protocol",
+    "raw_data",
+    "parsed_data",
+    "repeat",
+    "frequency",
+    "notes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^command-[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 9,
+      "maxLength": 160
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "canonical_name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "uniqueItems": true
+    },
+    "encoding_type": {
+      "enum": ["protocol", "raw", "stateful", "future"]
+    },
+    "protocol": {
+      "oneOf": [
+        {"$ref": "protocol.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "raw_data": {
+      "oneOf": [
+        {"$ref": "#/$defs/rawData"},
+        {"type": "null"}
+      ]
+    },
+    "parsed_data": {
+      "oneOf": [
+        {"$ref": "#/$defs/parsedData"},
+        {"type": "null"}
+      ]
+    },
+    "repeat": {
+      "$ref": "#/$defs/repeat"
+    },
+    "frequency": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 1000000,
+      "description": "Frequência da portadora em hertz."
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "maxLength": 4000
+    }
+  },
+  "$defs": {
+    "rawData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "unit", "sequence"],
+      "properties": {
+        "format": {
+          "enum": ["pulse_space"]
+        },
+        "unit": {
+          "const": "microseconds"
+        },
+        "sequence": {
+          "type": "array",
+          "description": "Durações positivas alternadas, começando por pulso (mark) e seguindo por espaço (space).",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000000
+          },
+          "minItems": 2
+        },
+        "duty_cycle": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "parsedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["representation", "data"],
+      "properties": {
+        "representation": {
+          "enum": ["command", "state_snapshot", "state_delta", "opaque"]
+        },
+        "data": {
+          "description": "Campos semânticos ou decodificados; as chaves devem ser documentadas pelo protocolo.",
+          "type": "object",
+          "additionalProperties": true
+        },
+        "base_state": {
+          "type": ["string", "null"],
+          "description": "ID de um comando/estado-base quando representation for state_delta."
+        }
+      }
+    },
+    "repeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "mode", "gap"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "description": "Número de transmissões adicionais após a primeira."
+        },
+        "mode": {
+          "enum": ["full_frame", "protocol_repeat_frame", "none"]
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000000,
+          "description": "Intervalo entre quadros, em microssegundos."
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"encoding_type": {"const": "protocol"}},
+        "required": ["encoding_type"]
+      },
+      "then": {
+        "properties": {
+          "protocol": {"type": "object"},
+          "parsed_data": {"type": "object"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"encoding_type": {"const": "raw"}},
+        "required": ["encoding_type"]
+      },
+      "then": {
+        "properties": {
+          "raw_data": {"type": "object"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"encoding_type": {"const": "stateful"}},
+        "required": ["encoding_type"]
+      },
+      "then": {
+        "properties": {
+          "protocol": {
+            "type": "object",
+            "properties": {"state_model": {"enum": ["stateful", "hybrid"]}}
+          },
+          "parsed_data": {
+            "type": "object",
+            "properties": {
+              "representation": {"enum": ["state_snapshot", "state_delta"]}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"encoding_type": {"const": "future"}},
+        "required": ["encoding_type"]
+      },
+      "then": {
+        "properties": {
+          "parsed_data": {
+            "type": "object",
+            "properties": {"representation": {"const": "opaque"}}
+          }
+        }
+      }
+    }
+  ]
+}

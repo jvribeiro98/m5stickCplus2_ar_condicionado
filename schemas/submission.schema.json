@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/submission.schema.json",
+  "title": "OpenIR Submission",
+  "description": "Envelope auditável para uma contribuição comunitária.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "submitted_at",
+    "submitter",
+    "action",
+    "target_id",
+    "payload",
+    "evidence",
+    "confidence",
+    "license",
+    "attestation",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^submission-[0-9]{4}-[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 160
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "submitter": {
+      "$ref": "#/$defs/contributor"
+    },
+    "action": {
+      "enum": ["create", "update", "deprecate", "verify", "report_incompatible"]
+    },
+    "target_id": {
+      "type": ["string", "null"],
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "payload": {
+      "description": "Documento candidato completo ou fragmento claramente identificado pelo processo de revisão.",
+      "type": "object"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      },
+      "minItems": 1
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "license": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9.+-]+$",
+      "description": "Identificador SPDX da licença da contribuição."
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rights_confirmed", "original_or_permitted", "terms_accepted"],
+      "properties": {
+        "rights_confirmed": {"const": true},
+        "original_or_permitted": {"const": true},
+        "terms_accepted": {"const": true}
+      }
+    },
+    "status": {
+      "enum": ["draft", "submitted", "under_review", "accepted", "rejected", "withdrawn"]
+    },
+    "review": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reviewers", "decision_at", "notes"],
+          "properties": {
+            "reviewers": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/contributor"},
+              "minItems": 1
+            },
+            "decision_at": {"type": "string", "format": "date-time"},
+            "notes": {"type": ["string", "null"], "maxLength": 4000}
+          }
+        },
+        {"type": "null"}
+      ]
+    }
+  },
+  "$defs": {
+    "contributor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 100
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "url": {
+          "type": ["string", "null"],
+          "format": "uri"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "uri", "hash"],
+      "properties": {
+        "type": {
+          "enum": ["capture", "device_test", "manufacturer_document", "source_code", "photo", "video", "report", "other"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "uri": {
+          "type": ["string", "null"],
+          "format": "uri"
+        },
+        "hash": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

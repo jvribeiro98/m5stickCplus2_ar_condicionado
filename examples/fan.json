@@ -1,0 +1,108 @@
+{
+  "openir_version": "1.0",
+  "id": "fan-acme-breeze-3",
+  "category": "fan",
+  "brand": {
+    "id": "acme",
+    "display_name": "ACME",
+    "aliases": [],
+    "manufacturer": "ACME Example Devices",
+    "website": null
+  },
+  "model": "Breeze 3",
+  "aliases": ["Breeze III"],
+  "description": "Exemplo fictício de ventilador representado por capturas RAW.",
+  "year": 2025,
+  "region": ["BR"],
+  "manufacturer": "ACME Example Devices",
+  "capabilities": [
+    {
+      "id": "power",
+      "display_name": "Energia",
+      "description": "Alterna a energia.",
+      "aliases": ["Power", "Liga/Desliga"],
+      "value_type": "trigger",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
+    },
+    {
+      "id": "fan_speed",
+      "display_name": "Velocidade",
+      "description": "Avança a velocidade do ventilador.",
+      "aliases": ["Speed", "Velocidade"],
+      "value_type": "trigger",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
+    }
+  ],
+  "commands": [
+    {
+      "id": "command-power",
+      "display_name": "Liga/Desliga",
+      "canonical_name": "power",
+      "aliases": ["Power"],
+      "encoding_type": "raw",
+      "protocol": null,
+      "raw_data": {
+        "format": "pulse_space",
+        "unit": "microseconds",
+        "sequence": [9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 40000],
+        "duty_cycle": 0.33
+      },
+      "parsed_data": null,
+      "repeat": {"count": 0, "mode": "none", "gap": 0},
+      "frequency": 38000,
+      "notes": "Sequência curta e fictícia, incluída apenas para demonstrar o formato RAW."
+    },
+    {
+      "id": "command-fan-speed",
+      "display_name": "Próxima velocidade",
+      "canonical_name": "fan_speed",
+      "aliases": ["Speed"],
+      "encoding_type": "raw",
+      "protocol": null,
+      "raw_data": {
+        "format": "pulse_space",
+        "unit": "microseconds",
+        "sequence": [9000, 4500, 560, 1690, 560, 560, 560, 1690, 560, 40000],
+        "duty_cycle": null
+      },
+      "parsed_data": null,
+      "repeat": {"count": 1, "mode": "full_frame", "gap": 40000},
+      "frequency": 38000,
+      "notes": "Demonstra duty cycle desconhecido e repetição do quadro completo."
+    }
+  ],
+  "compatibility": [],
+  "contributors": [
+    {
+      "id": "openir-example-team",
+      "display_name": "OpenIR Example Team",
+      "roles": ["author", "capturer"],
+      "url": "https://openir.dev/"
+    }
+  ],
+  "source": {
+    "origin": "generated",
+    "references": [
+      {
+        "uri": "https://openir.dev/examples/fan",
+        "description": "Dados fictícios criados para documentação.",
+        "hash": null
+      }
+    ],
+    "captured_at": null,
+    "confidence": 0.1
+  },
+  "license": {
+    "spdx_id": "CC0-1.0",
+    "name": "Creative Commons Zero v1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "status": "draft",
+  "version": "1.0.0",
+  "supersedes": null,
+  "extensions": {}
+}

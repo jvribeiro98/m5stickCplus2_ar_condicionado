@@ -1,0 +1,185 @@
+{
+  "openir_version": "1.0",
+  "id": "tv-samsung-au7700",
+  "category": "tv",
+  "brand": {
+    "id": "samsung",
+    "display_name": "Samsung",
+    "aliases": ["Samsung Electronics"],
+    "manufacturer": "Samsung Electronics",
+    "website": "https://www.samsung.com/"
+  },
+  "model": "AU7700",
+  "aliases": ["AU7700 Series", "Crystal UHD AU7700"],
+  "description": "Exemplo OpenIR de um televisor com comandos baseados em protocolo.",
+  "year": 2021,
+  "region": ["BR"],
+  "manufacturer": "Samsung Electronics",
+  "capabilities": [
+    {
+      "id": "power",
+      "display_name": "Energia",
+      "description": "Alterna o estado de energia.",
+      "aliases": ["Power", "Liga/Desliga"],
+      "value_type": "trigger",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
+    },
+    {
+      "id": "volume_up",
+      "display_name": "Aumentar volume",
+      "description": "Aumenta o volume em um passo.",
+      "aliases": ["VOL+", "Volume+", "Vol Up", "volume_up"],
+      "value_type": "trigger",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
+    },
+    {
+      "id": "mute",
+      "display_name": "Mudo",
+      "description": "Alterna o silenciamento de áudio.",
+      "aliases": ["Mute", "Silêncio"],
+      "value_type": "trigger",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
+    }
+  ],
+  "commands": [
+    {
+      "id": "command-power",
+      "display_name": "Liga/Desliga",
+      "canonical_name": "power",
+      "aliases": ["Power"],
+      "encoding_type": "protocol",
+      "protocol": {
+        "id": "samsung32",
+        "display_name": "Samsung 32-bit",
+        "variant": null,
+        "state_model": "stateless",
+        "parameters": {
+          "address": "0x0707",
+          "command": "0x02",
+          "bits": 32
+        },
+        "documentation": null
+      },
+      "raw_data": null,
+      "parsed_data": {
+        "representation": "command",
+        "data": {"function": "power_toggle"},
+        "base_state": null
+      },
+      "repeat": {"count": 0, "mode": "none", "gap": 0},
+      "frequency": 38000,
+      "notes": "Valores ilustrativos para demonstrar a estrutura."
+    },
+    {
+      "id": "command-volume-up",
+      "display_name": "Volume +",
+      "canonical_name": "volume_up",
+      "aliases": ["VOL+", "Volume+"],
+      "encoding_type": "protocol",
+      "protocol": {
+        "id": "samsung32",
+        "display_name": "Samsung 32-bit",
+        "variant": null,
+        "state_model": "stateless",
+        "parameters": {
+          "address": "0x0707",
+          "command": "0x07",
+          "bits": 32
+        },
+        "documentation": null
+      },
+      "raw_data": null,
+      "parsed_data": {
+        "representation": "command",
+        "data": {"function": "volume_up"},
+        "base_state": null
+      },
+      "repeat": {"count": 1, "mode": "full_frame", "gap": 45000},
+      "frequency": 38000,
+      "notes": "Exemplo de política de repetição."
+    },
+    {
+      "id": "command-mute",
+      "display_name": "Mudo",
+      "canonical_name": "mute",
+      "aliases": ["Mute"],
+      "encoding_type": "protocol",
+      "protocol": {
+        "id": "samsung32",
+        "display_name": "Samsung 32-bit",
+        "variant": null,
+        "state_model": "stateless",
+        "parameters": {
+          "address": "0x0707",
+          "command": "0x0F",
+          "bits": 32
+        },
+        "documentation": null
+      },
+      "raw_data": null,
+      "parsed_data": {
+        "representation": "command",
+        "data": {"function": "mute_toggle"},
+        "base_state": null
+      },
+      "repeat": {"count": 0, "mode": "none", "gap": 0},
+      "frequency": 38000,
+      "notes": null
+    }
+  ],
+  "compatibility": [
+    {
+      "device_id": "tv-samsung-au8000",
+      "level": "full",
+      "scope": "all",
+      "confidence": 0.72,
+      "evidence": "community_tested",
+      "notes": "Exemplo de compatibilidade; requer confirmação antes de publicação real.",
+      "tested_at": "2026-07-25T12:00:00Z"
+    },
+    {
+      "device_id": "tv-samsung-au9000",
+      "level": "partial",
+      "scope": ["power", "volume_up", "mute"],
+      "confidence": 0.55,
+      "evidence": "reported",
+      "notes": "Somente as capabilities listadas foram relatadas.",
+      "tested_at": null
+    }
+  ],
+  "contributors": [
+    {
+      "id": "openir-example-team",
+      "display_name": "OpenIR Example Team",
+      "roles": ["author", "reviewer"],
+      "url": "https://openir.dev/"
+    }
+  ],
+  "source": {
+    "origin": "generated",
+    "references": [
+      {
+        "uri": "https://openir.dev/examples/tv",
+        "description": "Registro demonstrativo; não deve ser tratado como captura verificada.",
+        "hash": null
+      }
+    ],
+    "captured_at": null,
+    "confidence": 0.4
+  },
+  "license": {
+    "spdx_id": "CC0-1.0",
+    "name": "Creative Commons Zero v1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "status": "experimental",
+  "version": "1.0.0",
+  "supersedes": null,
+  "extensions": {}
+}

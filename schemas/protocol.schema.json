@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/protocol.schema.json",
+  "title": "OpenIR Protocol",
+  "description": "Identidade e parâmetros de um protocolo infravermelho.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "display_name", "variant", "state_model", "parameters"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "variant": {
+      "type": ["string", "null"],
+      "maxLength": 120
+    },
+    "state_model": {
+      "enum": ["stateless", "stateful", "hybrid"]
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Parâmetros necessários ao codificador, tais como address, command, bits ou model.",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    },
+    "documentation": {
+      "type": ["string", "null"],
+      "format": "uri"
+    }
+  }
+}

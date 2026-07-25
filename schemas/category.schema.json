@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/category.schema.json",
+  "title": "OpenIR Category",
+  "description": "Categoria canônica de um dispositivo OpenIR.",
+  "type": "string",
+  "enum": [
+    "tv",
+    "air_conditioner",
+    "fan",
+    "projector",
+    "receiver",
+    "soundbar",
+    "led_strip",
+    "camera",
+    "light",
+    "media_player",
+    "other"
+  ]
+}

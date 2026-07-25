@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/capability.schema.json",
+  "title": "OpenIR Capability",
+  "description": "Ação ou função semântica, independente de marca e de protocolo.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "display_name", "aliases", "value_type"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "description": {
+      "type": ["string", "null"],
+      "maxLength": 1000
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "uniqueItems": true
+    },
+    "value_type": {
+      "enum": ["trigger", "boolean", "integer", "number", "string", "enum", "object"]
+    },
+    "unit": {
+      "type": ["string", "null"],
+      "maxLength": 40
+    },
+    "allowed_values": {
+      "type": ["array", "null"],
+      "items": {
+        "type": ["string", "number", "integer", "boolean"]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "range": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum", "maximum"],
+          "properties": {
+            "minimum": {"type": "number"},
+            "maximum": {"type": "number"},
+            "step": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        {"type": "null"}
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"value_type": {"const": "enum"}},
+        "required": ["value_type"]
+      },
+      "then": {
+        "required": ["allowed_values"],
+        "properties": {"allowed_values": {"type": "array"}}
+      }
+    }
+  ]
+}

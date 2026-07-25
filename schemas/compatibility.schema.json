@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openir.dev/schemas/v1/compatibility.schema.json",
+  "title": "OpenIR Compatibility",
+  "description": "Relação de compatibilidade verificada ou alegada entre um perfil e outro dispositivo.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["device_id", "level", "scope", "confidence", "evidence", "notes"],
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "level": {
+      "enum": ["exact", "full", "partial", "family", "unverified", "incompatible"]
+    },
+    "scope": {
+      "oneOf": [
+        {"const": "all"},
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "evidence": {
+      "enum": ["measured", "community_tested", "manufacturer", "derived", "reported", "unknown"]
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "maxLength": 2000
+    },
+    "tested_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"level": {"const": "partial"}},
+        "required": ["level"]
+      },
+      "then": {
+        "properties": {"scope": {"type": "array"}}
+      }
+    },
+    {
+      "if": {
+        "properties": {"level": {"enum": ["exact", "full"]}},
+        "required": ["level"]
+      },
+      "then": {
+        "properties": {"scope": {"const": "all"}}
+      }
+    }
+  ]
+}

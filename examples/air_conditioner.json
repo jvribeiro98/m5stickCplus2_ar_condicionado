@@ -1,0 +1,188 @@
+{
+  "openir_version": "1.0",
+  "id": "air-conditioner-samsung-example-inverter",
+  "category": "air_conditioner",
+  "brand": {
+    "id": "samsung",
+    "display_name": "Samsung",
+    "aliases": ["Samsung Electronics"],
+    "manufacturer": "Samsung Electronics",
+    "website": "https://www.samsung.com/"
+  },
+  "model": "Example Inverter",
+  "aliases": ["Example AC"],
+  "description": "Exemplo de ar-condicionado stateful com snapshots completos.",
+  "year": null,
+  "region": ["global"],
+  "manufacturer": "Samsung Electronics",
+  "capabilities": [
+    {
+      "id": "power",
+      "display_name": "Energia",
+      "description": "Estado de energia desejado.",
+      "aliases": ["Power", "Liga/Desliga"],
+      "value_type": "boolean",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
+    },
+    {
+      "id": "temperature",
+      "display_name": "Temperatura",
+      "description": "Temperatura-alvo.",
+      "aliases": ["Temp", "Setpoint"],
+      "value_type": "integer",
+      "unit": "celsius",
+      "allowed_values": null,
+      "range": {"minimum": 16, "maximum": 30, "step": 1}
+    },
+    {
+      "id": "mode",
+      "display_name": "Modo",
+      "description": "Modo de operação.",
+      "aliases": ["Mode", "Modo AC"],
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": ["auto", "cool", "dry", "fan", "heat"],
+      "range": null
+    },
+    {
+      "id": "fan_speed",
+      "display_name": "Ventilação",
+      "description": "Velocidade do ventilador.",
+      "aliases": ["Fan", "Fan speed"],
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": ["auto", "low", "medium", "high", "turbo"],
+      "range": null
+    }
+  ],
+  "commands": [
+    {
+      "id": "command-state-cool-23-auto-on",
+      "display_name": "Ligar em frio, 23 °C, automático",
+      "canonical_name": "power",
+      "aliases": ["Cool 23 Auto On"],
+      "encoding_type": "stateful",
+      "protocol": {
+        "id": "samsung-ac",
+        "display_name": "Samsung A/C",
+        "variant": "extended-state",
+        "state_model": "stateful",
+        "parameters": {"model": "generic", "extended": true},
+        "documentation": null
+      },
+      "raw_data": null,
+      "parsed_data": {
+        "representation": "state_snapshot",
+        "data": {
+          "power": true,
+          "temperature": 23,
+          "mode": "cool",
+          "fan_speed": "auto",
+          "swing_vertical": true,
+          "turbo": false,
+          "sleep_minutes": 0
+        },
+        "base_state": null
+      },
+      "repeat": {"count": 0, "mode": "none", "gap": 0},
+      "frequency": 38000,
+      "notes": "Snapshot autossuficiente; os valores são demonstrativos."
+    },
+    {
+      "id": "command-state-cool-24-auto-on",
+      "display_name": "Ligar em frio, 24 °C, automático",
+      "canonical_name": "temperature",
+      "aliases": ["Cool 24 Auto On"],
+      "encoding_type": "stateful",
+      "protocol": {
+        "id": "samsung-ac",
+        "display_name": "Samsung A/C",
+        "variant": "extended-state",
+        "state_model": "stateful",
+        "parameters": {"model": "generic", "extended": true},
+        "documentation": null
+      },
+      "raw_data": null,
+      "parsed_data": {
+        "representation": "state_snapshot",
+        "data": {
+          "power": true,
+          "temperature": 24,
+          "mode": "cool",
+          "fan_speed": "auto",
+          "swing_vertical": true,
+          "turbo": false,
+          "sleep_minutes": 0
+        },
+        "base_state": null
+      },
+      "repeat": {"count": 0, "mode": "none", "gap": 0},
+      "frequency": 38000,
+      "notes": "Outro snapshot completo, não um código isolado de temperatura +."
+    },
+    {
+      "id": "command-state-off",
+      "display_name": "Desligar",
+      "canonical_name": "power",
+      "aliases": ["Off", "Power Off"],
+      "encoding_type": "stateful",
+      "protocol": {
+        "id": "samsung-ac",
+        "display_name": "Samsung A/C",
+        "variant": "extended-state",
+        "state_model": "stateful",
+        "parameters": {"model": "generic", "extended": true},
+        "documentation": null
+      },
+      "raw_data": null,
+      "parsed_data": {
+        "representation": "state_snapshot",
+        "data": {
+          "power": false,
+          "temperature": 24,
+          "mode": "cool",
+          "fan_speed": "auto",
+          "swing_vertical": true,
+          "turbo": false,
+          "sleep_minutes": 0
+        },
+        "base_state": null
+      },
+      "repeat": {"count": 0, "mode": "none", "gap": 0},
+      "frequency": 38000,
+      "notes": null
+    }
+  ],
+  "compatibility": [],
+  "contributors": [
+    {
+      "id": "openir-example-team",
+      "display_name": "OpenIR Example Team",
+      "roles": ["author"],
+      "url": "https://openir.dev/"
+    }
+  ],
+  "source": {
+    "origin": "generated",
+    "references": [
+      {
+        "uri": "https://openir.dev/examples/air-conditioner",
+        "description": "Exemplo estrutural de protocolo stateful.",
+        "hash": null
+      }
+    ],
+    "captured_at": null,
+    "confidence": 0.25
+  },
+  "license": {
+    "spdx_id": "CC0-1.0",
+    "name": "Creative Commons Zero v1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "status": "experimental",
+  "version": "1.0.0",
+  "supersedes": null,
+  "extensions": {}
+}

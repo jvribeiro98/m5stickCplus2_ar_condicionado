@@ -1,0 +1,120 @@
+{
+  "openir_version": "1.0",
+  "id": "soundbar-acme-stage-20",
+  "category": "soundbar",
+  "brand": {
+    "id": "acme",
+    "display_name": "ACME",
+    "aliases": [],
+    "manufacturer": "ACME Example Devices",
+    "website": null
+  },
+  "model": "Stage 20",
+  "aliases": ["S20 Soundbar"],
+  "description": "Exemplo fictício de soundbar com comandos protocolados.",
+  "year": 2025,
+  "region": ["US", "BR"],
+  "manufacturer": "ACME Example Devices",
+  "capabilities": [
+    {
+      "id": "volume_down",
+      "display_name": "Diminuir volume",
+      "description": "Diminui o volume em um passo.",
+      "aliases": ["VOL-", "Volume-", "Vol Down"],
+      "value_type": "trigger",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
+    },
+    {
+      "id": "sound_mode",
+      "display_name": "Modo de som",
+      "description": "Seleciona o próximo perfil de som.",
+      "aliases": ["Sound Mode", "Effect"],
+      "value_type": "trigger",
+      "unit": null,
+      "allowed_values": null,
+      "range": null
+    }
+  ],
+  "commands": [
+    {
+      "id": "command-volume-down",
+      "display_name": "Volume -",
+      "canonical_name": "volume_down",
+      "aliases": ["VOL-", "Volume-"],
+      "encoding_type": "protocol",
+      "protocol": {
+        "id": "nec",
+        "display_name": "NEC",
+        "variant": "extended",
+        "state_model": "stateless",
+        "parameters": {"address": "0x20DF", "command": "0x0B", "bits": 32},
+        "documentation": null
+      },
+      "raw_data": null,
+      "parsed_data": {
+        "representation": "command",
+        "data": {"function": "volume_down"},
+        "base_state": null
+      },
+      "repeat": {"count": 1, "mode": "protocol_repeat_frame", "gap": 108000},
+      "frequency": 38000,
+      "notes": null
+    },
+    {
+      "id": "command-sound-mode",
+      "display_name": "Próximo modo de som",
+      "canonical_name": "sound_mode",
+      "aliases": ["Effect"],
+      "encoding_type": "protocol",
+      "protocol": {
+        "id": "nec",
+        "display_name": "NEC",
+        "variant": "extended",
+        "state_model": "stateless",
+        "parameters": {"address": "0x20DF", "command": "0x12", "bits": 32},
+        "documentation": null
+      },
+      "raw_data": null,
+      "parsed_data": {
+        "representation": "command",
+        "data": {"function": "sound_mode_next"},
+        "base_state": null
+      },
+      "repeat": {"count": 0, "mode": "none", "gap": 0},
+      "frequency": 38000,
+      "notes": "Comando fictício para exemplificar uma capability específica de áudio."
+    }
+  ],
+  "compatibility": [],
+  "contributors": [
+    {
+      "id": "openir-example-team",
+      "display_name": "OpenIR Example Team",
+      "roles": ["author"],
+      "url": "https://openir.dev/"
+    }
+  ],
+  "source": {
+    "origin": "generated",
+    "references": [
+      {
+        "uri": "https://openir.dev/examples/soundbar",
+        "description": "Dados fictícios para documentação.",
+        "hash": null
+      }
+    ],
+    "captured_at": null,
+    "confidence": 0.15
+  },
+  "license": {
+    "spdx_id": "CC0-1.0",
+    "name": "Creative Commons Zero v1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "status": "draft",
+  "version": "1.0.0",
+  "supersedes": null,
+  "extensions": {}
+}

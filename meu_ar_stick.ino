@@ -4,6 +4,46 @@
 #include <Preferences.h>
 
 // ============================================================
+// GUIA PARA USAR OS COMANDOS DO SEU AR-CONDICIONADO
+// ============================================================
+//
+// Este sketch foi preparado para aparelhos SAMSUNG reconhecidos pela
+// classe IRSamsungAc da biblioteca IRremoteESP8266. Diferentemente de
+// uma TV, o controle de um ar normalmente transmite o estado completo:
+// ligado/desligado, temperatura, modo, ventilacao, swing etc. Por isso,
+// nao ha neste programa um codigo RAW curto para preencher em cada botao.
+//
+// PARA TESTAR EM UM SAMSUNG:
+//   1. Instale as bibliotecas "M5StickCPlus2" e "IRremoteESP8266".
+//   2. Grave este sketch no M5StickC Plus2.
+//   3. Aponte o topo do M5Stick para o receptor do ar.
+//   4. Selecione POWER com o botao A e confirme com o botao B.
+//
+// PARA COLOCAR OS COMANDOS DE OUTRA MARCA:
+//   1. Use o exemplo "IRrecvDumpV3" da IRremoteESP8266 em uma placa
+//      ESP32/ESP8266 ligada a um receptor infravermelho.
+//   2. Pressione os botoes do controle original e consulte, no Monitor
+//      Serial, o protocolo e o modelo detectados.
+//   3. Na pasta "src" da biblioteca, localize a classe da sua marca.
+//      Exemplos: IRDaikinESP, IRFujitsuAC, IRLgAc e IRMitsubishiAC.
+//   4. Troque <ir_Samsung.h>, IRSamsungAc e todas as constantes
+//      kSamsungAc... pelas equivalentes da classe escolhida.
+//   5. Adapte principalmente applyStateToAc(), sendNormal(),
+//      sendExtended() e togglePower() aos metodos dessa classe.
+//
+// SE O IRrecvDumpV3 MOSTRAR "UNKNOWN":
+//   Copie a sequencia RAW exibida e use IRsend::sendRaw() em um projeto
+//   proprio. Isso exige uma sequencia completa para cada combinacao de
+//   estado e, portanto, nao pode ser simplesmente colado nas constantes
+//   Samsung deste sketch.
+//
+// Bibliotecas necessarias:
+//   - M5StickCPlus2
+//   - IRremoteESP8266
+//   - Preferences (incluida no pacote de placas ESP32)
+// ============================================================
+
+// ============================================================
 // Samsung AC Remote - M5StickC Plus2
 // Interface inspirada em controles visuais como o CatHack.
 //
@@ -19,27 +59,28 @@
 //   Emissor IR interno do M5StickC Plus2: GPIO 19
 // ============================================================
 
-constexpr uint16_t IR_PIN = 19;
-constexpr uint8_t MENU_COUNT = 8;
+constexpr uint16_t IR_PIN = 19;  // GPIO do emissor IR interno.
+constexpr uint8_t MENU_COUNT = 8;  // Total de opcoes do menu.
 
-IRSamsungAc ac(IR_PIN);
-Preferences prefs;
+IRSamsungAc ac(IR_PIN);  // Monta e envia quadros do protocolo Samsung.
+Preferences prefs;       // Salva o ultimo estado na memoria do ESP32.
 
+// Estado completo que sera mostrado na tela e transmitido para o ar.
 struct AcState {
-  bool power = false;
-  uint8_t temp = 23;
-  uint8_t mode = kSamsungAcCool;
-  uint8_t fan = kSamsungAcFanAuto;
-  bool swing = true;
-  bool turbo = false;
-  uint16_t sleepMinutes = 0;
+  bool power = false;                 // Estado inicial: desligado.
+  uint8_t temp = 23;                  // Temperatura inicial em graus C.
+  uint8_t mode = kSamsungAcCool;      // Modo inicial: refrigeracao.
+  uint8_t fan = kSamsungAcFanAuto;    // Ventilacao automatica.
+  bool swing = true;                  // Oscilacao das aletas ligada.
+  bool turbo = false;                 // Modo potente desligado.
+  uint16_t sleepMinutes = 0;          // Zero desativa o temporizador.
 };
 
-AcState state;
-uint8_t selected = 0;
+AcState state;       // Estado atual do controle.
+uint8_t selected = 0;  // Item atualmente selecionado, de 0 a 7.
 
-String toast;
-uint32_t toastUntil = 0;
+String toast;            // Aviso temporario no rodape.
+uint32_t toastUntil = 0; // Momento em que o aviso deve desaparecer.
 
 // Evita gravações repetidas demais na flash.
 bool savePending = false;
@@ -48,6 +89,7 @@ uint32_t saveAt = 0;
 // ------------------------------------------------------------
 // Cores
 // ------------------------------------------------------------
+// Todas as cores abaixo usam o formato RGB565 aceito pelo display.
 constexpr uint16_t BG       = 0x0000;
 constexpr uint16_t PANEL    = 0x18E3;
 constexpr uint16_t BORDER   = 0x4208;
@@ -61,6 +103,7 @@ constexpr uint16_t YELLOW_UI = 0xFFE0;
 // ------------------------------------------------------------
 // Nomes
 // ------------------------------------------------------------
+// Traduz a constante numerica do modo para um texto legivel.
 const char* modeName(uint8_t mode) {
   switch (mode) {
     case kSamsungAcAuto: return "AUTO";
@@ -72,6 +115,7 @@ const char* modeName(uint8_t mode) {
   }
 }
 
+// Converte a constante numerica da ventilacao em texto para a tela.
 const char* fanName(uint8_t fan) {
   switch (fan) {
     case kSamsungAcFanAuto:
@@ -84,6 +128,7 @@ const char* fanName(uint8_t fan) {
   }
 }
 
+// Formata o temporizador como OFF, 1H, 2H ou 4H.
 String sleepName() {
   if (state.sleepMinutes == 0) return "OFF";
   return String(state.sleepMinutes / 60) + "H";
@@ -92,11 +137,13 @@ String sleepName() {
 // ------------------------------------------------------------
 // Persistência
 // ------------------------------------------------------------
+// Adia a gravacao para evitar muitas escritas seguidas na memoria flash.
 void scheduleSave() {
   savePending = true;
   saveAt = millis() + 800;
 }
 
+// Grava cada campo do estado atual na memoria nao volatil.
 void saveStateNow() {
   prefs.putBool("power", state.power);
   prefs.putUChar("temp", state.temp);
@@ -108,6 +155,7 @@ void saveStateNow() {
   savePending = false;
 }
 
+// Recupera o ultimo estado salvo quando o dispositivo e ligado.
 void loadState() {
   prefs.begin("samsung-ac", false);
 
@@ -119,6 +167,7 @@ void loadState() {
   state.turbo = prefs.getBool("turbo", false);
   state.sleepMinutes = prefs.getUShort("sleep", 0);
 
+  // Ignora valores invalidos que possam existir na memoria.
   if (state.temp < kSamsungAcMinTemp || state.temp > kSamsungAcMaxTemp) {
     state.temp = 23;
   }
@@ -131,6 +180,8 @@ void loadState() {
 // ------------------------------------------------------------
 // IR
 // ------------------------------------------------------------
+// Copia as escolhas da interface para o objeto do protocolo Samsung.
+// Ao adaptar outra marca, confira os metodos equivalentes nesta funcao.
 void applyStateToAc() {
   ac.setPower(state.power);
   ac.setMode(state.mode);
@@ -148,11 +199,13 @@ void applyStateToAc() {
   ac.setBeep(false);
 }
 
+// Mostra uma mensagem durante o tempo informado em milissegundos.
 void showToast(const String& message, uint16_t duration = 900) {
   toast = message;
   toastUntil = millis() + duration;
 }
 
+// Envia um quadro Samsung normal contendo o estado completo.
 void sendNormal(const String& message) {
   applyStateToAc();
   ac.send();
@@ -162,6 +215,7 @@ void sendNormal(const String& message) {
   Serial.println(ac.toString());
 }
 
+// Envia o quadro estendido usado pelo temporizador SLEEP.
 void sendExtended(const String& message) {
   applyStateToAc();
 
@@ -178,6 +232,7 @@ void sendExtended(const String& message) {
   Serial.println(ac.toString());
 }
 
+// Usa os quadros especiais de ligar/desligar do protocolo Samsung.
 void togglePower() {
   state.power = !state.power;
   applyStateToAc();
@@ -202,18 +257,21 @@ void togglePower() {
 // ------------------------------------------------------------
 // Alterações de estado
 // ------------------------------------------------------------
+// Diminui a temperatura sem ultrapassar o limite da biblioteca.
 void decreaseTemp() {
   if (state.temp > kSamsungAcMinTemp) state.temp--;
   state.power = true;
   sendNormal("TEMP -");
 }
 
+// Aumenta a temperatura sem ultrapassar o limite da biblioteca.
 void increaseTemp() {
   if (state.temp < kSamsungAcMaxTemp) state.temp++;
   state.power = true;
   sendNormal("TEMP +");
 }
 
+// Avanca para o proximo modo de funcionamento disponivel.
 void nextMode() {
   switch (state.mode) {
     case kSamsungAcAuto: state.mode = kSamsungAcCool; break;
@@ -235,6 +293,7 @@ void nextMode() {
   sendNormal("MODO " + String(modeName(state.mode)));
 }
 
+// Avanca para a proxima velocidade de ventilacao permitida.
 void nextFan() {
   // Em AUTO e SECO alguns aparelhos limitam a ventilação.
   if (state.mode == kSamsungAcAuto || state.mode == kSamsungAcDry) {
@@ -259,12 +318,14 @@ void nextFan() {
   sendNormal("FAN " + String(fanName(state.fan)));
 }
 
+// Liga ou desliga a oscilacao das aletas.
 void toggleSwing() {
   state.swing = !state.swing;
   state.power = true;
   sendNormal(state.swing ? "SWING ON" : "SWING OFF");
 }
 
+// Liga ou desliga TURBO e ajusta a velocidade da ventoinha.
 void toggleTurbo() {
   state.turbo = !state.turbo;
   state.power = true;
@@ -278,6 +339,7 @@ void toggleTurbo() {
   sendNormal(state.turbo ? "TURBO ON" : "TURBO OFF");
 }
 
+// Alterna o temporizador entre OFF, 1 hora, 2 horas e 4 horas.
 void cycleSleep() {
   switch (state.sleepMinutes) {
     case 0:   state.sleepMinutes = 60;  break;
@@ -290,6 +352,7 @@ void cycleSleep() {
   sendExtended("SLEEP " + sleepName());
 }
 
+// Executa a acao correspondente ao bloco selecionado na tela.
 void executeSelected() {
   switch (selected) {
     case 0: decreaseTemp(); break;
@@ -306,6 +369,7 @@ void executeSelected() {
 // ------------------------------------------------------------
 // Interface
 // ------------------------------------------------------------
+// Desenha o painel superior com temperatura e estado do aparelho.
 void drawHeader() {
   auto& d = StickCP2.Display;
 
@@ -337,6 +401,7 @@ void drawHeader() {
   d.drawString(state.turbo ? "TURBO" : sleepName(), 226, 47);
 }
 
+// Desenha uma opcao; o item selecionado recebe cores de destaque.
 void drawMenuButton(uint8_t index, int x, int y, int w, int h,
                     const String& label, const String& value = "") {
   auto& d = StickCP2.Display;
@@ -362,6 +427,7 @@ void drawMenuButton(uint8_t index, int x, int y, int w, int h,
   }
 }
 
+// Mostra a ajuda dos botoes ou o ultimo aviso temporario.
 void drawFooter() {
   auto& d = StickCP2.Display;
 
@@ -379,6 +445,7 @@ void drawFooter() {
   }
 }
 
+// Redesenha todos os elementos da interface.
 void drawScreen() {
   auto& d = StickCP2.Display;
 
@@ -419,17 +486,22 @@ void drawScreen() {
 // ------------------------------------------------------------
 // Setup / Loop
 // ------------------------------------------------------------
+// Executado uma unica vez ao ligar ou reiniciar o M5Stick.
 void setup() {
+  // O Monitor Serial exibe uma descricao dos comandos transmitidos.
   Serial.begin(115200);
 
+  // Inicializa energia, botoes e display.
   auto cfg = M5.config();
   StickCP2.begin(cfg);
 
+  // Configura a tela horizontal de 240 x 135 pixels.
   StickCP2.Display.setRotation(1);
   StickCP2.Display.setBrightness(90);
   StickCP2.Display.setTextFont(1);
   StickCP2.Display.setTextWrap(false);
 
+  // Recupera as configuracoes usadas anteriormente.
   loadState();
 
   // Inicializa internamente como desligado para as transições de power.
@@ -444,26 +516,33 @@ void setup() {
   Serial.println("Aponte o topo do Stick para o ar-condicionado.");
 }
 
+// Executado continuamente enquanto o dispositivo estiver ligado.
 void loop() {
+  // Atualiza os eventos dos botoes.
   StickCP2.update();
 
+  // A tela so sera redesenhada se alguma informacao visual mudar.
   bool redraw = false;
 
+  // Clique curto em A: seleciona a proxima opcao.
   if (StickCP2.BtnA.wasClicked()) {
     selected = (selected + 1) % MENU_COUNT;
     redraw = true;
   }
 
+  // A pressionado: volta para a opcao anterior.
   if (StickCP2.BtnA.wasHold()) {
     selected = (selected + MENU_COUNT - 1) % MENU_COUNT;
     redraw = true;
   }
 
+  // Clique em B: executa e transmite a opcao selecionada.
   if (StickCP2.BtnB.wasClicked()) {
     executeSelected();
     redraw = true;
   }
 
+  // Quando o aviso expira, redesenha o rodape com a ajuda normal.
   static bool toastWasVisible = false;
   const bool toastVisible = toast.length() && millis() < toastUntil;
 
@@ -472,6 +551,7 @@ void loop() {
   }
   toastWasVisible = toastVisible;
 
+  // Grava o estado quando chegar o momento agendado.
   if (savePending && millis() >= saveAt) {
     saveStateNow();
   }
@@ -480,5 +560,6 @@ void loop() {
     drawScreen();
   }
 
+  // Pequena pausa para estabilizar a leitura dos botoes.
   delay(10);
 }
