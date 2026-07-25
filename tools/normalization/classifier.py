@@ -1,8 +1,9 @@
-"""Classificação conservadora, pontuada e explicável de arquivos."""
+"""Classificação conservadora, contextual e explicável de arquivos."""
 
 import re
 from collections import Counter
 
+from .commands import normalize_command, suggest_command
 from .confidence import clamp
 from .models import InventoryRecord
 
@@ -18,9 +19,62 @@ CLASSES = (
 )
 
 GENERIC_PATH_WORDS = ("brute", "bruteforce", "universal", "codeset", "database")
-CLIMATE_WORDS = ("temp", "temperature", "cool", "heat", "swing", "fan_speed")
-MEDIA_WORDS = ("play", "pause", "stop", "channel", "subtitle", "rewind", "input")
-LIGHT_WORDS = ("brightness", "dimmer", "color", "rgb", "white", "strobe")
+UNIVERSAL_MARKERS = (
+    "universal",
+    "universal remote",
+    "codeset",
+    "code set",
+    "all models",
+    "multi brand",
+)
+STRONG_GROUP_PATTERNS = {
+    "climate": (
+        "temperature_up",
+        "temperature_down",
+        "temp_up",
+        "temp_down",
+        "swing_vertical",
+        "swing_horizontal",
+        "fan_speed",
+    ),
+    "television": ("channel_up", "channel_down", "subtitle", "program_guide"),
+    "audio": (
+        "subwoofer_up",
+        "subwoofer_down",
+        "bass_up",
+        "bass_down",
+        "treble_up",
+        "treble_down",
+    ),
+    "fan": ("oscillation", "breeze"),
+    "lighting": (
+        "brightness_up",
+        "brightness_down",
+        "strobe",
+        "color_red",
+        "color_blue",
+    ),
+    "media": ("play", "pause", "stop", "rewind", "fast_forward", "next", "previous"),
+}
+CATEGORY_GROUPS = {
+    "projector": {"media", "lighting", "television"},
+    "tv": {"media", "television", "audio", "lighting"},
+    "air_conditioner": {"climate", "fan"},
+    "fan": {"fan", "climate", "lighting"},
+    "receiver": {"audio", "media", "television", "lighting"},
+    "soundbar": {"audio", "media", "television"},
+    "led_strip": {"lighting", "media", "climate"},
+    "media_player": {"media", "television"},
+    "dvd_player": {"media", "television"},
+    "blu_ray_player": {"media", "television"},
+}
+INCOMPATIBLE_GROUP_PAIRS = {
+    frozenset(("climate", "television")),
+    frozenset(("climate", "media")),
+    frozenset(("climate", "audio")),
+    frozenset(("fan", "television")),
+    frozenset(("fan", "media")),
+}
 
 
 def _numbered(command_names: list[str]) -> list[tuple[str, int]]:
@@ -32,16 +86,21 @@ def _numbered(command_names: list[str]) -> list[tuple[str, int]]:
     return result
 
 
-def _semantic_groups(command_names: list[str]) -> set[str]:
-    joined = " ".join(command_names).casefold()
-    groups = set()
-    if any(word in joined for word in CLIMATE_WORDS):
-        groups.add("climate")
-    if any(word in joined for word in MEDIA_WORDS):
-        groups.add("media")
-    if any(word in joined for word in LIGHT_WORDS):
-        groups.add("lighting")
-    return groups
+def _strong_semantics(command_names: list[str], path: str) -> dict[str, list[str]]:
+    matches: dict[str, list[str]] = {}
+    for original in command_names:
+        suggestion = suggest_command(original, path)
+        canonical = suggestion["canonical_name"] or ""
+        normalized = normalize_command(original).replace(" ", "_")
+        values = {canonical, normalized}
+        for group, patterns in STRONG_GROUP_PATTERNS.items():
+            if any(
+                value == pattern or value.startswith(pattern + "_")
+                for value in values
+                for pattern in patterns
+            ):
+                matches.setdefault(group, []).append(original)
+    return {group: sorted(set(commands)) for group, commands in sorted(matches.items())}
 
 
 def classify(
@@ -51,13 +110,14 @@ def classify(
     brand_suggestion: dict | None = None,
 ) -> dict:
     path_key = record.source_path.replace("\\", "/").casefold()
+    normalized_path = re.sub(r"[_\s-]+", " ", path_key)
     names = [command.original_name for command in record.commands]
     numbered = _numbered(names)
     base_counts = Counter(base for base, _ in numbered)
     protocols = {command.protocol for command in record.commands if command.protocol}
     addresses = {command.address for command in record.commands if command.address}
     signal_count = max(record.signal_count, len(record.commands))
-    semantic_groups = _semantic_groups(names)
+    strong_semantics = _strong_semantics(names, record.source_path)
 
     scores = {name: 0.0 for name in CLASSES}
     reasons = {name: [] for name in CLASSES}
@@ -69,21 +129,24 @@ def classify(
         scores["test_or_sample"] = 0.86
         reasons["test_or_sample"].append("caminho contém marcador explícito de teste")
 
-    explicit_generic = [word for word in GENERIC_PATH_WORDS if word in path_key]
+    explicit_generic = [
+        word for word in GENERIC_PATH_WORDS if word.replace("_", " ") in normalized_path
+    ]
     if explicit_generic:
         scores["brute_force"] += 0.28
         reasons["brute_force"].append(
             "marcador genérico no caminho: " + ", ".join(explicit_generic)
         )
-    if "universal" in path_key:
-        scores["universal_remote"] += 0.48
-        reasons["universal_remote"].append("caminho declara controle universal")
-    if "codeset" in path_key or "database" in path_key:
-        scores["universal_remote"] += 0.28
-        reasons["universal_remote"].append("estrutura declara codeset/database")
+
+    matched_universal = sorted(marker for marker in UNIVERSAL_MARKERS if marker in normalized_path)
+    if matched_universal:
+        scores["universal_remote"] = 0.82
+        reasons["universal_remote"].append(
+            "indicador explícito de universalidade: " + ", ".join(matched_universal)
+        )
     if any(token in path_key for token in ("/misc", "/mixed", "collection")):
-        scores["mixed_collection"] += 0.24
-        reasons["mixed_collection"].append("caminho sugere coleção mista")
+        scores["mixed_collection"] += 0.42
+        reasons["mixed_collection"].append("metadado/caminho sugere coleção mista")
 
     sequential_groups = [
         (base, sorted({number for candidate, number in numbered if candidate == base}))
@@ -124,24 +187,46 @@ def classify(
         reasons["brute_force"].append("nenhum modelo confiável")
         reasons["universal_remote"].append("nenhum modelo específico")
 
-    if {"climate", "media"} <= semantic_groups:
-        scores["mixed_collection"] += 0.52
-        reasons["mixed_collection"].append(
-            "comandos de climatização e mídia coexistem no mesmo arquivo"
+    resolved_category = category_suggestion["normalized_value"] if category_suggestion else None
+    semantic_category = resolved_category if resolved_category in CATEGORY_GROUPS else None
+    allowed_groups = CATEGORY_GROUPS.get(semantic_category, set())
+    incompatible = {
+        group: commands
+        for group, commands in strong_semantics.items()
+        if semantic_category and group not in allowed_groups
+    }
+    if semantic_category and incompatible:
+        scores["mixed_collection"] += 0.74
+        details = "; ".join(
+            f"{group}: {', '.join(commands[:6])}"
+            for group, commands in sorted(incompatible.items())
         )
-    if len(semantic_groups) >= 3:
-        scores["mixed_collection"] += 0.2
         reasons["mixed_collection"].append(
-            "três grupos semânticos distintos: " + ", ".join(sorted(semantic_groups))
+            f"comandos fortes incompatíveis com {semantic_category}: {details}"
         )
-    if len(protocols) >= 4 and len(addresses) >= 8:
+    unresolved_conflicts = [
+        pair for pair in INCOMPATIBLE_GROUP_PAIRS if pair.issubset(strong_semantics)
+    ]
+    if not semantic_category and unresolved_conflicts:
+        scores["mixed_collection"] += 0.7
+        reasons["mixed_collection"].append(
+            "grupos fortes incompatíveis sem categoria resolvida: "
+            + "; ".join(
+                "+".join(sorted(pair))
+                for pair in sorted(unresolved_conflicts, key=lambda item: sorted(item))
+            )
+        )
+    if len(incompatible) >= 2 or (not semantic_category and len(unresolved_conflicts) >= 2):
+        scores["mixed_collection"] += 0.16
+        reasons["mixed_collection"].append("múltiplos grupos semanticamente incompatíveis")
+    if len(protocols) >= 4 and len(addresses) >= 8 and (incompatible or "/mixed" in path_key):
         scores["mixed_collection"] += 0.22
-        reasons["mixed_collection"].append("alta diversidade conjunta de protocolos e endereços")
+        reasons["mixed_collection"].append("alta diversidade técnica confirma coleção mista")
 
     model_confidence = model_candidate["confidence"]
     if category_suggestion is None:
         category_confidence = record.category_confidence
-    elif category_suggestion["normalized_value"] is not None:
+    elif resolved_category is not None:
         category_confidence = category_suggestion["confidence"]
     else:
         category_confidence = 0.0
@@ -153,7 +238,9 @@ def classify(
     identity_strong = (
         brand_confidence >= 0.6 and category_confidence >= 0.65 and model_confidence >= 0.65
     )
-    technical_coherence = 1 <= signal_count <= 80 and len(protocols) <= 2 and len(addresses) <= 4
+    technical_coherence = (
+        1 <= signal_count <= 80 and 1 <= len(protocols) <= 2 and len(addresses) <= 4
+    )
     strong_non_device = max(
         scores["brute_force"],
         scores["universal_remote"],
@@ -176,36 +263,40 @@ def classify(
                 f"modelo conservador com confiança {model_confidence:.2f}",
             ]
         )
-    else:
-        if brand_confidence >= 0.6 and category_confidence >= 0.65:
-            scores["device_family"] = 0.48
-            if signal_count <= 200:
-                scores["device_family"] += 0.08
-            if model_candidate["candidate"]:
-                scores["device_family"] += 0.06
-                reasons["device_family"].append(
-                    f"modelo provável, mas confiança limitada a {model_confidence:.2f}"
-                )
-            else:
-                reasons["device_family"].append(
-                    "marca e categoria conhecidas, sem modelo específico confiável"
-                )
-            if len(protocols) <= 2:
-                scores["device_family"] += 0.05
-                reasons["device_family"].append("protocolos tecnicamente coerentes")
+    elif brand_confidence >= 0.6 and category_confidence >= 0.65:
+        scores["device_family"] = 0.48
+        if signal_count <= 200:
+            scores["device_family"] += 0.08
+        if model_candidate["candidate"]:
+            scores["device_family"] += 0.06
+            reasons["device_family"].append(
+                f"modelo provável, mas confiança limitada a {model_confidence:.2f}"
+            )
+        else:
+            reasons["device_family"].append(
+                "marca e categoria conhecidas, sem modelo específico confiável"
+            )
+        if 1 <= len(protocols) <= 2:
+            scores["device_family"] += 0.05
+            reasons["device_family"].append(
+                f"dados técnicos observados em {len(protocols)} protocolo(s)"
+            )
+        elif not protocols:
+            reasons["device_family"].append("dados técnicos insuficientes")
 
-    if "universal" in path_key and (sequential_groups or signal_count >= 24 or len(addresses) >= 4):
-        scores["universal_remote"] += 0.22
-        reasons["universal_remote"].append("volume/diversidade confirma o indicador universal")
+    if matched_universal and model_confidence >= 0.65 and signal_count <= 20:
+        scores["device_family"] = max(scores["device_family"], 0.74)
+        reasons["device_family"].append(
+            "modelo plausível e conjunto pequeno conflitam com marcador universal"
+        )
+        reasons["universal_remote"].append("modelo plausível exige revisão do marcador universal")
+    if matched_universal and (sequential_groups or signal_count >= 24 or len(addresses) >= 4):
+        scores["universal_remote"] += 0.08
+        reasons["universal_remote"].append("volume/diversidade reforça o indicador universal")
         if sequential_groups:
             reasons["universal_remote"].append(
                 f"{sequential_count} comandos numerados reforçam a estrutura universal"
             )
-    if scores["mixed_collection"] and len(protocols) >= 3:
-        scores["mixed_collection"] += 0.3
-        reasons["mixed_collection"].append(
-            f"{len(protocols)} protocolos confirmam coleção tecnicamente mista"
-        )
 
     ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
     classification, score = ranked[0]
@@ -236,7 +327,8 @@ def classify(
             "dominant_prefix_count": dominant_prefix_count,
             "protocol_count": len(protocols),
             "address_count": len(addresses),
-            "semantic_groups": sorted(semantic_groups),
+            "strong_semantics": strong_semantics,
+            "incompatible_semantic_groups": sorted(incompatible),
             "model_candidate": model_candidate["candidate"],
             "model_confidence": model_confidence,
             "brand_confidence": brand_confidence,

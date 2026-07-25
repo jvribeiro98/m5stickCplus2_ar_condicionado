@@ -297,6 +297,16 @@ def _write_human_sample(
     previous: dict[str, str],
     analysis_output: Path,
 ) -> int:
+    sample_path = analysis_output / "human-label-sample.csv"
+    existing_labels = {}
+    if sample_path.exists():
+        with sample_path.open(encoding="utf-8", newline="") as stream:
+            for row in csv.DictReader(stream):
+                if row.get("human_label") or row.get("human_notes"):
+                    existing_labels[row["path"]] = (
+                        row.get("human_label", ""),
+                        row.get("human_notes", ""),
+                    )
     by_path = {record.source_path: record for record in records}
     model_by_id = {row["record_id"]: row for row in models}
     ranked = sorted(
@@ -321,6 +331,7 @@ def _write_human_sample(
     for classification in sorted(selected.values(), key=lambda row: row["source_path"]):
         record = by_path[classification["source_path"]]
         model = model_by_id[classification["record_id"]]
+        human_label, human_notes = existing_labels.get(record.source_path, ("", ""))
         rows.append(
             {
                 "path": record.source_path,
@@ -336,12 +347,12 @@ def _write_human_sample(
                 "protocols_count": classification["evidence"]["protocol_count"],
                 "addresses_count": classification["evidence"]["address_count"],
                 "reasons": classification["reasons"],
-                "human_label": "",
-                "human_notes": "",
+                "human_label": human_label,
+                "human_notes": human_notes,
             }
         )
     _dump_csv(
-        analysis_output / "human-label-sample.csv",
+        sample_path,
         rows,
         [
             "path",

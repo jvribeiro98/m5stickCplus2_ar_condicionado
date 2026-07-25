@@ -81,7 +81,13 @@ Classes:
 
 A decisão combina caminho, modelo detectável, quantidade de sinais, comandos numerados, repetição de intenções, diversidade de protocolos, diversidade de endereços e erros de parsing.
 
-O caminho nunca decide sozinho. Por exemplo, `Universal/` fornece evidência inicial, mas é necessário um conjunto amplo, numerado ou tecnicamente diverso para confirmar `universal_remote`.
+Marcadores explícitos como `universal`, `universal_remote`, `codeset`, `code_set`,
+`all_models` e `multi_brand` têm precedência para `universal_remote`. Um modelo plausível
+e um conjunto pequeno são preservados como conflito para revisão.
+
+A detecção de coleção mista é contextual à categoria. Comandos normais de projetores,
+como `Eco`, `Lamp`, `Focus` e `Zoom`, não indicam mistura. Um comando forte incompatível,
+como temperatura em uma TV, registra o comando exato como evidência.
 
 Arquivos podem carregar conflitos com classificações alternativas. Resultados abaixo de 0,80 ou conflitantes entram na fila de revisão.
 
@@ -129,8 +135,13 @@ Ordem de evidência:
 Um candidato extraído precisa conter letras e números. Termos genéricos são excluídos. Mais de um candidato gera alternativas e revisão. Sem candidato claro, `candidate` é `null`.
 
 Campos de modelo inferidos pelo inventário não são tratados como explícitos: sua confiança
-original é preservada e limitada. Valores numéricos de conversão, como `32_159`, combinações
-de `Unknown` com a marca e nomes `remote1`/`device1` são rejeitados.
+original é preservada e limitada. Valores numéricos de conversão, como `32_159`, e nomes
+`remote1`/`device1` são rejeitados. O prefixo `Unknown_` é removido apenas quando sobra um
+candidato comercial plausível, com confiança moderada e revisão obrigatória. Assim,
+`Unknown_RC-ZVR02` sugere `RC-ZVR02`, enquanto `Unknown_9067` permanece sem modelo.
+
+Zero protocolos nunca é descrito como coerência técnica: o relatório registra dados
+técnicos insuficientes e não concede o bônus correspondente.
 
 ## Comandos
 

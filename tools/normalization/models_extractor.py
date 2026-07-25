@@ -80,58 +80,77 @@ def _commercial_candidate(value: str, record: InventoryRecord) -> str | None:
     return None
 
 
+def _clean_unknown_prefix(value: str) -> tuple[str, bool]:
+    match = re.fullmatch(r"(?i)unknown[\s_-]+(.+)", value.strip())
+    if not match:
+        return value, False
+    return match.group(1).strip(), True
+
+
 def extract_model(record: InventoryRecord) -> dict:
     path = PurePosixPath(record.source_path.replace("\\", "/"))
-    evidence: list[tuple[str, str, float]] = []
+    evidence: list[tuple[str, str, float, bool]] = []
+    unknown_numeric_removed = False
+
+    def add_evidence(source: str, value: str, confidence: float) -> None:
+        nonlocal unknown_numeric_removed
+        cleaned, was_cleaned = _clean_unknown_prefix(value)
+        candidate = _commercial_candidate(cleaned, record)
+        if candidate:
+            evidence.append(
+                (
+                    source,
+                    candidate,
+                    min(confidence, 0.58) if was_cleaned else confidence,
+                    was_cleaned,
+                )
+            )
+        elif was_cleaned and cleaned.isdigit():
+            unknown_numeric_removed = True
 
     if record.original_model:
-        candidate = _commercial_candidate(record.original_model, record)
-        if candidate:
-            confidence = record.model_confidence
-            if confidence <= 0:
-                confidence = 0.62
-            evidence.append(("inventory.model", candidate, min(confidence, 0.78)))
-
-    filename_candidate = _commercial_candidate(path.stem, record)
-    if filename_candidate:
-        evidence.append(("file_name", filename_candidate, 0.72))
-
-    parent_candidate = _commercial_candidate(path.parent.name, record)
-    if parent_candidate:
-        evidence.append(("parent_directory", parent_candidate, 0.68))
-
+        confidence = record.model_confidence or 0.62
+        add_evidence("inventory.model", record.original_model, min(confidence, 0.78))
+    add_evidence("file_name", path.stem, 0.72)
+    add_evidence("parent_directory", path.parent.name, 0.68)
     for comment in record.comments:
-        comment_candidate = _commercial_candidate(comment, record)
-        if comment_candidate:
-            evidence.append(("comment", comment_candidate, 0.6))
+        add_evidence("comment", comment, 0.6)
 
-    unique: list[tuple[str, str, float]] = []
-    seen = set()
+    unique: list[tuple[str, str, float, bool]] = []
+    positions = {}
     for item in evidence:
         key = _normalized(item[1])
-        if key and key not in seen:
-            seen.add(key)
+        if key and key not in positions:
+            positions[key] = len(unique)
             unique.append(item)
+        elif key and item[2] > unique[positions[key]][2]:
+            unique[positions[key]] = item
 
     if not unique:
+        reasons = [
+            "nenhum modelo comercial forte; marcas, categorias, genéricos e números foram excluídos"
+        ]
+        if unknown_numeric_removed:
+            reasons = [
+                "prefixo Unknown removido, mas sufixo numérico não possui evidência adicional"
+            ]
         return {
             "record_id": record.record_id,
             "source_path": record.source_path,
             "original_text": record.original_model,
             "candidate": None,
+            "cleaned_candidate": None,
             "confidence": 0.0,
             "extraction_source": None,
             "ambiguity": False,
             "alternatives": [],
-            "reasons": [
-                "nenhum modelo comercial forte; marcas, categorias, genéricos e números foram excluídos"
-            ],
+            "reasons": reasons,
             "requires_review": True,
         }
 
-    source, candidate, confidence = unique[0]
+    source, candidate, confidence, was_cleaned = unique[0]
     alternatives = [
-        value for _, value, _ in unique[1:] if _normalized(value) != _normalized(candidate)
+        value for _, value, _, _ in unique[1:] if _normalized(value) != _normalized(candidate)
     ]
     if alternatives:
         confidence = min(confidence, 0.55)
@@ -139,12 +158,15 @@ def extract_model(record: InventoryRecord) -> dict:
         f"padrão alfanumérico comercial encontrado em {source}",
         f"confiança da fonte limitada a {confidence:.2f}",
     ]
+    if was_cleaned:
+        reasons.append("prefixo Unknown removido; sufixo plausível preservado")
     if record.original_brand and _normalized(candidate) == _normalized(record.original_brand):
         return {
             "record_id": record.record_id,
             "source_path": record.source_path,
             "original_text": record.original_model,
             "candidate": None,
+            "cleaned_candidate": None,
             "confidence": 0.0,
             "extraction_source": None,
             "ambiguity": True,
@@ -157,6 +179,7 @@ def extract_model(record: InventoryRecord) -> dict:
         "source_path": record.source_path,
         "original_text": record.original_model,
         "candidate": candidate,
+        "cleaned_candidate": candidate if was_cleaned else None,
         "confidence": round(confidence, 4),
         "extraction_source": source,
         "ambiguity": bool(alternatives),

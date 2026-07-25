@@ -212,3 +212,137 @@ def test_real_universal_pattern_is_not_specific_device():
 
     assert result["classification"] in {"universal_remote", "brute_force"}
     assert result["evidence"]["sequential_group_count"] >= 1
+
+
+def classified(
+    path: str,
+    category: str,
+    brand: str,
+    model: str,
+    names: tuple[str, ...],
+    *,
+    with_protocol: bool = True,
+) -> tuple[dict, dict]:
+    commands = tuple(
+        CommandRecord(name, "NEC" if with_protocol else None, "0x01" if with_protocol else None)
+        for name in names
+    )
+    item = record(
+        path,
+        category=category,
+        brand=brand,
+        model=model,
+        category_confidence=0.85,
+        brand_confidence=0.7,
+        model_confidence=0.75,
+        commands=commands,
+    )
+    model_result = extract_model(item)
+    result = classify(
+        item,
+        model_result,
+        suggest_category(category, path),
+        suggest_brand(brand, path),
+    )
+    return result, model_result
+
+
+def test_projector_benq_commands_are_contextual_not_mixed():
+    result, _ = classified(
+        "Projectors/BenQ/TK800M.ir",
+        "Projectors",
+        "BenQ",
+        "TK800M",
+        ("Power", "Eco", "Lamp", "Focus", "Zoom", "Input"),
+    )
+    assert result["classification"] != "mixed_collection"
+    assert result["evidence"]["incompatible_semantic_groups"] == []
+
+
+def test_projector_sony_commands_are_contextual_not_mixed():
+    result, _ = classified(
+        "Projectors/Sony/RM_PJ24.ir",
+        "Projectors",
+        "Sony",
+        "RM_PJ24",
+        ("Power", "Focus", "Zoom", "Shift", "Position"),
+    )
+    assert result["classification"] != "mixed_collection"
+    assert result["evidence"]["incompatible_semantic_groups"] == []
+
+
+def test_tv_temperature_command_is_strong_mixed_evidence():
+    result, _ = classified(
+        "TVs/Samsung/AU7700.ir",
+        "TVs",
+        "Samsung",
+        "AU7700",
+        ("Power", "Volume+", "Temperature Up"),
+    )
+    assert result["classification"] == "mixed_collection"
+    assert any("Temperature Up" in reason for reason in result["reasons"])
+
+
+def test_filename_universal_marker_has_precedence():
+    result, _ = classified(
+        "TVs/Generic/Generic_Universal_Remote.ir",
+        "TVs",
+        "Generic",
+        "Generic_Universal_Remote",
+        ("Power", "Volume+"),
+    )
+    assert result["classification"] == "universal_remote"
+
+
+def test_folder_universal_marker_has_precedence():
+    result, _ = classified(
+        "Universal_TV_Remotes/Brand/ModelX.ir",
+        "TVs",
+        "Brand",
+        "ModelX",
+        ("Power", "Volume+"),
+    )
+    assert result["classification"] == "universal_remote"
+
+
+def test_numbered_power_collection_remains_brute_force():
+    commands = tuple(CommandRecord(f"Power{i}", "NEC", f"0x{i:02X}") for i in range(1, 9))
+    item = record(
+        "TVs/Brand/Power_Codes.ir",
+        category="TVs",
+        brand="Brand",
+        commands=commands,
+        signal_count=128,
+    )
+    result = classify(item, extract_model(item))
+    assert result["classification"] == "brute_force"
+
+
+def test_zero_protocols_are_reported_as_insufficient_not_coherent():
+    result, _ = classified(
+        "TVs/Samsung/AU7700.ir",
+        "TVs",
+        "Samsung",
+        "AU7700",
+        ("Power", "Volume+"),
+        with_protocol=False,
+    )
+    all_reasons = " ".join(result["reasons"]).casefold()
+    assert result["evidence"]["protocol_count"] == 0
+    assert "coerente" not in all_reasons
+    assert "insuficientes" in all_reasons
+
+
+def test_unknown_prefix_keeps_plausible_model_at_moderate_confidence():
+    result = extract_model(record("Fans/Unknown/Unknown_RC-ZVR02.ir"))
+    assert result["candidate"] == "RC-ZVR02"
+    assert result["cleaned_candidate"] == "RC-ZVR02"
+    assert 0.4 <= result["confidence"] < 0.8
+    assert result["requires_review"]
+
+
+def test_unknown_numeric_suffix_is_not_a_model():
+    result = extract_model(record("Fans/Unknown/Unknown_9067.ir"))
+    assert result["candidate"] is None
+    assert result["cleaned_candidate"] is None
+    assert result["requires_review"]
