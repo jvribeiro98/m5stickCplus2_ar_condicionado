@@ -1,0 +1,16 @@
+{
+  "name": "Controle Samsung AC - M5StickC Plus2",
+  "version": "automatic",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "firmware.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
